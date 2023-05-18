@@ -1,61 +1,67 @@
 #include <climits>
 #include "Heap.h"
 
-Heap::Heap(int size): currentSize(0)
+template<class T>
+Heap<T>::Heap(int size): currentSize(0)
 {
-    table = new Edge[size];
+    table = new T[size];
 }
 
-Heap::~Heap()
+template<class T>
+Heap<T>::~Heap()
 {
     delete[] table;
 }
 
-void Heap::add(Edge edge)
+template<class T>
+void Heap<T>::add(T t)
 {
-    table[currentSize++] = edge;
+    table[currentSize++] = t;
     fixUp(currentSize - 1);
 }
 
-Edge Heap::popRoot()
+template<class T>
+T Heap<T>::popRoot()
 {
-    Edge root = table[0];
+    T root = table[0];
 
     table[0] = table[currentSize - 1];
-    table[currentSize - 1] = Edge(0, -1, -1);
+    table[currentSize - 1] = T();
 
     fixDown(0);
 
     currentSize--;
 }
 
-void Heap::fixUp(int index)
+template<class T>
+void Heap<T>::fixUp(int index)
 {
     if (table[(index - 1) / 2] > table[index])
     {
-        Edge temp = table[(index - 1) / 2];
+        T temp = table[(index - 1) / 2];
         table[(index - 1) / 2] = table[index];
         table[index] = temp;
         fixUp((index - 1) / 2);
     }
 }
 
-void Heap::fixDown(int index)
+template<class T>
+void Heap<T>::fixDown(int index)
 {
-    Edge parent = table[index];
+    T parent = table[index];
     if (currentSize <= 2 * index + 1)       //brak potomków dla wierzchołka
         return;
 
-    Edge childLeft = table[2 * index + 1];
+    T childLeft = table[2 * index + 1];
 
     //jeżeli tylko jeden potomek, to jako drugi podstawiamy minimalną wartość do porównania, żeby na pewno nie zamienić
     //jeżeli jest tylko 1 potomek, to jako prawego wstawiamy sztuczną krawędź o wadze, która w porównaniu zawsze da
-    //ten sam wynik (parent < childRight == true)
-    Edge childRight = currentSize > (2 * index + 2) ? table[2 * index + 2] : Edge(INT_MAX, -1, -1);
+    //ten sam wynik (previous < childRight == true)
+    T childRight = currentSize > (2 * index + 2) ? table[2 * index + 2] : T(INT_MAX, -1, -1);
 
     if (parent > childLeft || parent > childRight)
     {
-        Edge temp = parent;
+        T temp = parent;
 
         if (!(childLeft > childRight))
         {
@@ -71,7 +77,8 @@ void Heap::fixDown(int index)
     }
 }
 
-Edge &Heap::operator[](int index)
+template<class T>
+T &Heap<T>::operator[](int index)
 {
     return table[index];
 }

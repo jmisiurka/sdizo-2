@@ -1,28 +1,25 @@
 #ifndef HEAP_H
 #define HEAP_H
 
-#include "Edge.h"
-
 //klasa reprezentująca kopiec wykorzystywany jako kolejka priorytetowa
-//w algorytmach wymagających sortowania wag krawędzi
 //implementacja tablicowa, minimum w korzeniu
-class Heap
-{
+template <class T> class Heap           //w kopcu będą przechowywane różne typy, muszą tylko mieć zaimplementowane
+{                                       //operatory porównania (<, >, ==)
     int currentSize;
-    Edge* table;
+    T* table;
 public:
     Heap(int size);
     ~Heap();
 
-    void add(Edge edge);
+    void add(T element);
 
-    Edge popRoot();
+    T popRoot();
 
     void fixUp(int index);
 
     void fixDown(int index);
 
-    Edge& operator[](int index);
+    T& operator[](int index);
 };
 
 #endif
