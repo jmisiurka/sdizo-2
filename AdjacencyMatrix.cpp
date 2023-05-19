@@ -1,14 +1,37 @@
 #include <climits>
 #include "AdjacencyMatrix.h"
 
-//struktury pomocnicze
-struct KeyParentPair
+/************************
+ * STRUKTURY POMOCNICZE *
+ ************************/
+
+//struktura
+struct KeyPrevPair
 {
+    int id = -1;
     int key = INT_MAX;
-    int parent = -1;
+    int previous = -1;                  // -1 oznacza, że niezdefiniowany
+
+    bool operator<(KeyPrevPair other) const
+    {
+        return this->key < other.key;
+    }
+
+    bool operator>(KeyPrevPair other) const
+    {
+        return this->key > other.key;
+    }
+
+    bool operator==(KeyPrevPair other) const
+    {
+        return this->key == other.key;
+    }
 };
 
 
+/***********************
+ * IMPLEMENTACJE METOD *
+ ***********************/
 
 
 //metody klasy AdjacencyMatrix
@@ -35,7 +58,12 @@ AdjacencyMatrix::~AdjacencyMatrix()
     delete[] matrix;
 }
 
-int &AdjacencyMatrix::get(int i, int j) const
+void AdjacencyMatrix::loadFromFile(const std::string& filename)
+{
+
+}
+
+int& AdjacencyMatrix::get(int i, int j) const
 {
     return matrix[i][j];
 }
@@ -67,9 +95,36 @@ void AdjacencyMatrix::print() const
 
 void AdjacencyMatrix::MST_Prim(int starting)
 {
-    KeyParentPair vertices[V];
+    KeyPrevPair vertices[V];                //tablica wszystkich wierzchołków
+    bool considered[V];                     //tablica rozpatrzonych wierzchołków
 
-    Heap Q = Heap(V / 2 * (V - 1));     //kolejka priorytetowa - kopiec o max V/2*(V+1) elementach
+    Heap Q = Heap<KeyPrevPair*>(V);
+    //to może mieć wpływ na złożoność
+    for (int i = 0; i < V; i++)             //przypisanie numerów wierzchołków (póki co wszystkie elementy takie same)
+    {
+        Q[i] = &(vertices[i]);
+        considered[i] = false;
+    }
 
+    int u = starting;
 
+    vertices[u].key = 0;                    //wierzchołek początkowy ma na start klucz 0
+    Q.fixDown(0);                     //naprawa całego kopca
+
+    while (!Q.empty())
+    {
+        u = Q.popRoot()->id;                //pobranie elementu z kolejki
+
+        for(int i = 0; i < V; i++)
+        {
+            if (matrix[u][i] != 0)          //wywoływane dla wszystkich sąsiadów <u>
+            {
+                if (!considered[i] && vertices[i].key > vertices[u].key + matrix[u][i])
+                {
+                    vertices[i].key = vertices[u].key + matrix[u][i];
+                    vertices[i].previous = u;
+                }
+            }
+        }
+    }
 }

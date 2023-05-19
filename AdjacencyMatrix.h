@@ -2,6 +2,7 @@
 #define ADJACENCYMATRIX_H
 
 #include <cstdio>
+#include <string>
 #include "Heap.h"
 
 //Klasa reprezentująca macierz sąsiedztwa
@@ -14,11 +15,13 @@ public:
     AdjacencyMatrix(int V);
     ~AdjacencyMatrix();
 
+    void loadFromFile(const std::string& filename);
+
     int& get(int i, int j) const;
 
     void print() const;
 
-    void MST_Prim(int starting = 0)
+    void MST_Prim(int starting = 0);
 };
 
 #endif
