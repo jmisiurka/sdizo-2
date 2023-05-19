@@ -6,20 +6,23 @@
 //klasa reprezentująca kopiec wykorzystywany jako kolejka priorytetowa
 //implementacja tablicowa, minimum w korzeniu
 template <class T> class Heap           //w kopcu będą przechowywane różne typy, muszą tylko mieć zaimplementowane
-{                                       //operatory porównania (<, >, ==)
+{                                       //operatory porównania (<, >, ==) oraz atrybut id
+    int maxSize;
     int currentSize;
-    T* table;
+    T** table;
 public:
     Heap(int size);
     ~Heap();
 
     void add(T element);
 
-    T popRoot();
+    T& popRoot();
 
     void fixUp(int index);
 
     void fixDown(int index);
+
+    int find(int id);
 
     bool empty();
 
@@ -31,7 +34,8 @@ public:
 template<class T>
 Heap<T>::Heap(int size): currentSize(0)
 {
-    table = new T[size];
+    maxSize = size;
+    table = new T*[maxSize];
 }
 
 template<class T>
@@ -43,21 +47,23 @@ Heap<T>::~Heap()
 template<class T>
 void Heap<T>::add(T t)
 {
-    table[currentSize++] = t;
+    table[currentSize++] = &t;
     fixUp(currentSize - 1);
 }
 
 template<class T>
-T Heap<T>::popRoot()
+T& Heap<T>::popRoot()
 {
-    T root = table[0];
+    T* root = table[0];
 
     table[0] = table[currentSize - 1];
-    table[currentSize - 1] = T();
+    table[currentSize - 1] = nullptr;
+
+    currentSize--;
 
     fixDown(0);
 
-    currentSize--;
+    return *root;
 }
 
 template<class T>
@@ -75,22 +81,21 @@ void Heap<T>::fixUp(int index)
 template<class T>
 void Heap<T>::fixDown(int index)
 {
-    T parent = table[index];
+    T* parent = table[index];
     if (currentSize <= 2 * index + 1)       //brak potomków dla wierzchołka
         return;
 
-    T childLeft = table[2 * index + 1];
+    T* childLeft = table[2 * index + 1];
 
-    //jeżeli tylko jeden potomek, to jako drugi podstawiamy minimalną wartość do porównania, żeby na pewno nie zamienić
-    //jeżeli jest tylko 1 potomek, to jako prawego wstawiamy sztuczną krawędź o wadze, która w porównaniu zawsze da
-    //ten sam wynik (previous < childRight == true)
-    T childRight = currentSize > (2 * index + 2) ? table[2 * index + 2] : T(INT_MAX, -1, -1);
+    //jeżeli tylko jeden potomek, to jako drugi podstawiamy też pierwszego, bo przy równości pierwszeństwo ma
+    //lewy, a nie musimy przez to rozpatrywać osobno przypadku tylko jednego potomka
+    T* childRight = currentSize > (2 * index + 2) ? table[2 * index + 2] : table[2 * index + 1];
 
     if (parent > childLeft || parent > childRight)
     {
-        T temp = parent;
+        T* temp = parent;
 
-        if (!(childLeft > childRight))
+        if (!(*childLeft > *childRight))
         {
             table[index] = childLeft;
             table[2 * index + 1] = temp;
@@ -105,6 +110,20 @@ void Heap<T>::fixDown(int index)
 }
 
 template<class T>
+int Heap<T>::find(int id)                       //zwraca indeks w tablicy elementu o podanym id
+{
+    for (int i = 0; i < currentSize; i++)
+    {
+        if ((*table[i])->id == id)
+        {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+template<class T>
 bool Heap<T>::empty()
 {
     return currentSize == 0;
@@ -113,7 +132,7 @@ bool Heap<T>::empty()
 template<class T>
 T& Heap<T>::operator[](int index)
 {
-    return table[index];
+    return *(table[index]);
 }
 
 
