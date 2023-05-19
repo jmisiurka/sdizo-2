@@ -60,7 +60,47 @@ AdjacencyMatrix::~AdjacencyMatrix()
 
 void AdjacencyMatrix::loadFromFile(const std::string& filename)
 {
+    std::ifstream filestream(filename);
 
+    if (!filestream.is_open())
+    {
+        std::cout << "Błąd podczas otwierania pliku" << std::endl;
+        return;
+    }
+
+    int numberOfEdges, numberOfVertices;
+    filestream >> numberOfEdges;
+    filestream >> numberOfVertices;
+
+    for (int i = 0; i < V; i++)                     //usunięcie dotychczasowej macierzy
+    {
+        delete[] matrix[i];
+    }
+    delete[] matrix;
+
+    V = numberOfVertices;
+
+    matrix = new int *[V];                           //alokacja 1 wymiaru tablicy
+    for (int i = 0; i < V; i++)
+    {
+        matrix[i] = new int[V];                     //alokacja 2 wymiaru tablicy i wyzerowanie wszystkich komórek
+        for (int j = 0; j < V; j++)
+        {
+            matrix[i][j] = 0;
+        }
+    }
+
+
+    int vertexA, vertexB, weight;
+    for (int i = 0; i < numberOfEdges; i++)
+    {
+        filestream >> vertexA;
+        filestream >> vertexB;
+        filestream >> weight;
+
+        matrix[vertexA][vertexB] = weight;
+        matrix[vertexB][vertexA] = weight;
+    }
 }
 
 int& AdjacencyMatrix::get(int i, int j) const

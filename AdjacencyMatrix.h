@@ -3,12 +3,14 @@
 
 #include <cstdio>
 #include <string>
+#include <fstream>
+#include <iostream>
 #include "Heap.h"
 
 //Klasa reprezentująca macierz sąsiedztwa
 class AdjacencyMatrix
 {
-    const int V;                        //liczba wierzchołków grafu
+    int V;                        //liczba wierzchołków grafu
     int** matrix;                       //macierz sąsiedztwa
 
 public:

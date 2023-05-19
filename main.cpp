@@ -5,5 +5,9 @@
 
 int main()
 {
+    AdjacencyMatrix matrix = AdjacencyMatrix(0);
 
+    matrix.loadFromFile("mst.txt");
+
+    matrix.print();
 }
