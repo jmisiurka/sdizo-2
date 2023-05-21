@@ -2,6 +2,7 @@
 #define ADJACENCYLIST_H
 
 #include <iostream>
+#include <fstream>
 
 //struktura pojedynczego wpisu w liście sąsiedztwa zawierająca wskaźnik na
 //kolejny element, numer przyłączonego wierzchołka i wagę krawędzi
@@ -15,15 +16,21 @@ struct AdjacencyListNode
 //klasa reprezentująca listę sąsiedztwa
 class AdjacencyList
 {
-    const int V;
+    int V;
     AdjacencyListNode** list;
 public:
     AdjacencyList(int V);
     ~AdjacencyList();
 
-    int getWeight(int vertexA, int vertexB) const;
+    void loadFromFile(const std::string& filename);
+
+    int get(int vertexA, int vertexB) const;
+
+    void clearList();
 
     void print() const;
+
+    AdjacencyList MST_Prim(int starting = 0);
 };
 
 #endif

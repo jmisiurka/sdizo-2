@@ -1,40 +1,6 @@
 #include <climits>
 #include "AdjacencyMatrix.h"
 
-/************************
- * STRUKTURY POMOCNICZE *
- ************************/
-
-//struktura
-struct KeyPrevPair
-{
-    int id = -1;
-    int key = INT_MAX;
-    int previous = -1;                  // -1 oznacza, że niezdefiniowany
-
-    bool operator<(KeyPrevPair other) const
-    {
-        return this->key < other.key;
-    }
-
-    bool operator>(KeyPrevPair other) const
-    {
-        return this->key > other.key;
-    }
-
-    bool operator==(KeyPrevPair other) const
-    {
-        return this->key == other.key;
-    }
-};
-
-
-/***********************
- * IMPLEMENTACJE METOD *
- ***********************/
-
-
-//metody klasy AdjacencyMatrix
 AdjacencyMatrix::AdjacencyMatrix(const int V) : V(V)
 {
     matrix = new int *[V];                           //alokacja 1 wymiaru tablicy
@@ -101,11 +67,13 @@ void AdjacencyMatrix::loadFromFile(const std::string& filename)
         matrix[vertexA][vertexB] = weight;
         matrix[vertexB][vertexA] = weight;
     }
+
+    filestream.close();
 }
 
-int& AdjacencyMatrix::get(int i, int j) const
+int& AdjacencyMatrix::get(int vertexA, int vertexB) const
 {
-    return matrix[i][j];
+    return matrix[vertexA][vertexB];
 }
 
 void AdjacencyMatrix::print() const
@@ -131,11 +99,12 @@ void AdjacencyMatrix::print() const
         }
         printf("%-4d\n", matrix[i][V - 1]);
     }
+    std::cout << std::endl << std::endl;
 }
 
 AdjacencyMatrix AdjacencyMatrix::MST_Prim(int starting)
 {
-    AdjacencyMatrix result = AdjacencyMatrix(V);
+    AdjacencyMatrix mst = AdjacencyMatrix(V);
 
     KeyPrevPair vertices[V];                //tablica wszystkich wierzchołków
     bool considered[V];                     //tablica rozpatrzonych wierzchołków
@@ -175,9 +144,9 @@ AdjacencyMatrix AdjacencyMatrix::MST_Prim(int starting)
     {
         int vertexA = pair.id;
         int vertexB = pair.previous;
-        result.matrix[vertexA][vertexB] = matrix[vertexA][vertexB];
-        result.matrix[vertexB][vertexA] = matrix[vertexB][vertexA];
+        mst.matrix[vertexA][vertexB] = matrix[vertexA][vertexB];
+        mst.matrix[vertexB][vertexA] = matrix[vertexB][vertexA];
     }
 
-    return result;
+    return mst;
 }

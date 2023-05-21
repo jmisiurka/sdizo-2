@@ -3,6 +3,34 @@
 
 #include <climits>
 
+//struktury wykorzystywane przez kopiec
+
+//struktura zawiera numer wierzchołka, odległość od wierzchołka początkowego oraz numer poprzedniego wierzchołka
+//wykorzystywana w algorytmie Prima do wyznaczania minimalnego drzewa rozpinającego
+struct KeyPrevPair
+{
+    int id = -1;
+    int key = INT_MAX;
+    int previous = -1;                                  // -1 oznacza, że niezdefiniowany
+
+    bool operator<(KeyPrevPair other) const
+    {
+        return this->key < other.key;
+    }
+
+    bool operator>(KeyPrevPair other) const
+    {
+        return this->key > other.key;
+    }
+
+    bool operator==(KeyPrevPair other) const
+    {
+        return this->key == other.key;
+    }
+};
+
+
+
 //klasa reprezentująca kopiec wykorzystywany jako kolejka priorytetowa
 //implementacja tablicowa, minimum w korzeniu
 template <class T> class Heap           //w kopcu będą przechowywane różne typy, muszą tylko mieć zaimplementowane

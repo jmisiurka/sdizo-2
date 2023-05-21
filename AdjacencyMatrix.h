@@ -19,7 +19,7 @@ public:
 
     void loadFromFile(const std::string& filename);
 
-    int& get(int i, int j) const;
+    int& get(int vertexA, int vertexB) const;
 
     void print() const;
 
