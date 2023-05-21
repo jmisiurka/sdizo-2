@@ -9,14 +9,14 @@ template <class T> class Heap           //w kopcu będą przechowywane różne t
 {                                       //operatory porównania (<, >, ==) oraz atrybut id
     int maxSize;
     int currentSize;
-    T** table;
+    T* table;
 public:
     Heap(int size);
     ~Heap();
 
     void add(T element);
 
-    T& popRoot();
+    T popRoot();
 
     void fixUp(int index);
 
@@ -26,7 +26,7 @@ public:
 
     bool empty();
 
-    T& operator[](int index);
+    T operator[](int index);
 };
 
 
@@ -35,7 +35,7 @@ template<class T>
 Heap<T>::Heap(int size): currentSize(0)
 {
     maxSize = size;
-    table = new T*[maxSize];
+    table = new T[maxSize];
 }
 
 template<class T>
@@ -47,14 +47,14 @@ Heap<T>::~Heap()
 template<class T>
 void Heap<T>::add(T t)
 {
-    table[currentSize++] = &t;
+    table[currentSize++] = t;
     fixUp(currentSize - 1);
 }
 
 template<class T>
-T& Heap<T>::popRoot()
+T Heap<T>::popRoot()
 {
-    T* root = table[0];
+    T root = table[0];
 
     table[0] = table[currentSize - 1];
     table[currentSize - 1] = nullptr;
@@ -63,7 +63,7 @@ T& Heap<T>::popRoot()
 
     fixDown(0);
 
-    return *root;
+    return root;
 }
 
 template<class T>
@@ -81,19 +81,19 @@ void Heap<T>::fixUp(int index)
 template<class T>
 void Heap<T>::fixDown(int index)
 {
-    T* parent = table[index];
+    T parent = table[index];
     if (currentSize <= 2 * index + 1)       //brak potomków dla wierzchołka
         return;
 
-    T* childLeft = table[2 * index + 1];
+    T childLeft = table[2 * index + 1];
 
     //jeżeli tylko jeden potomek, to jako drugi podstawiamy też pierwszego, bo przy równości pierwszeństwo ma
     //lewy, a nie musimy przez to rozpatrywać osobno przypadku tylko jednego potomka
-    T* childRight = currentSize > (2 * index + 2) ? table[2 * index + 2] : table[2 * index + 1];
+    T childRight = currentSize > (2 * index + 2) ? table[2 * index + 2] : table[2 * index + 1];
 
-    if (parent > childLeft || parent > childRight)
+    if (*parent > *childLeft || *parent > *childRight)
     {
-        T* temp = parent;
+        T temp = parent;
 
         if (!(*childLeft > *childRight))
         {
@@ -130,9 +130,10 @@ bool Heap<T>::empty()
 }
 
 template<class T>
-T& Heap<T>::operator[](int index)
+T Heap<T>::operator[](int index)
 {
-    return *(table[index]);
+    T val = table[index];
+    return val;
 }
 
 

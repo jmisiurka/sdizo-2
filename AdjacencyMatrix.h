@@ -23,7 +23,7 @@ public:
 
     void print() const;
 
-    void MST_Prim(int starting = 0);
+    AdjacencyMatrix MST_Prim(int starting = 0);
 };
 
 #endif

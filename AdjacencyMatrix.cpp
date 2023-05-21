@@ -133,8 +133,10 @@ void AdjacencyMatrix::print() const
     }
 }
 
-void AdjacencyMatrix::MST_Prim(int starting)
+AdjacencyMatrix AdjacencyMatrix::MST_Prim(int starting)
 {
+    AdjacencyMatrix result = AdjacencyMatrix(V);
+
     KeyPrevPair vertices[V];                //tablica wszystkich wierzchołków
     bool considered[V];                     //tablica rozpatrzonych wierzchołków
 
@@ -142,7 +144,8 @@ void AdjacencyMatrix::MST_Prim(int starting)
     //to może mieć wpływ na złożoność
     for (int i = 0; i < V; i++)             //przypisanie numerów wierzchołków (póki co wszystkie elementy takie same)
     {
-        Q[i] = &(vertices[i]);
+        vertices[i].id = i;
+        Q.add(&vertices[i]);
         considered[i] = false;
     }
 
@@ -167,4 +170,14 @@ void AdjacencyMatrix::MST_Prim(int starting)
             }
         }
     }
+
+    for (KeyPrevPair pair : vertices)
+    {
+        int vertexA = pair.id;
+        int vertexB = pair.previous;
+        result.matrix[vertexA][vertexB] = matrix[vertexA][vertexB];
+        result.matrix[vertexB][vertexA] = matrix[vertexB][vertexA];
+    }
+
+    return result;
 }
