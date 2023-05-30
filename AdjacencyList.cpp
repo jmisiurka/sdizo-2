@@ -31,7 +31,7 @@ AdjacencyList::~AdjacencyList()
     delete[] list;                                      //usunięcie pamięci tablicy list
 }
 
-void AdjacencyList::loadFromFile(const std::string &filename)
+void AdjacencyList::loadFromFile(const std::string &filename, bool directed)
 {
     std::ifstream filestream(filename);
 
@@ -41,16 +41,16 @@ void AdjacencyList::loadFromFile(const std::string &filename)
         return;
     }
 
+    if (list != nullptr)
+    {
+        clearList();
+    }
+
     int numberOfEdges, numberOfVertices;
     filestream >> numberOfEdges;
     filestream >> numberOfVertices;
 
     V = numberOfVertices;
-
-    if (list != nullptr)
-    {
-        clearList();
-    }
 
     delete[] list;
     list = new AdjacencyListNode* [V];
@@ -87,25 +87,28 @@ void AdjacencyList::loadFromFile(const std::string &filename)
             temp->weight = weight;
         }
 
-        if (list[vertexB] == nullptr)                   //lista krawędzi przy A jest pusta
+        if (!directed)                //jeśli graf nie jest skierowany, to wrzucamy krawędź do obu wierzchołków
         {
-            list[vertexB] = new AdjacencyListNode();
-            list[vertexB]->next = nullptr;
-            list[vertexB]->adjacentVertex = vertexA;
-            list[vertexB]->weight = weight;
-        } else
-        {                                            //lista krawędzi przy A nie jest pusta
-            AdjacencyListNode *temp = list[vertexB];
-            while (temp->next != nullptr)                   //przejście do ostatniego elementu listy
+            if (list[vertexB] == nullptr)                   //lista krawędzi przy B jest pusta
             {
-                temp = temp->next;
-            }
+                list[vertexB] = new AdjacencyListNode();
+                list[vertexB]->next = nullptr;
+                list[vertexB]->adjacentVertex = vertexA;
+                list[vertexB]->weight = weight;
+            } else
+            {                                            //lista krawędzi przy B nie jest pusta
+                AdjacencyListNode *temp = list[vertexB];
+                while (temp->next != nullptr)                   //przejście do ostatniego elementu listy
+                {
+                    temp = temp->next;
+                }
 
-            temp->next = new AdjacencyListNode();           //utworzenie nowego elementu
-            temp = temp->next;
-            temp->next = nullptr;
-            temp->adjacentVertex = vertexA;
-            temp->weight = weight;
+                temp->next = new AdjacencyListNode();           //utworzenie nowego elementu
+                temp = temp->next;
+                temp->next = nullptr;
+                temp->adjacentVertex = vertexA;
+                temp->weight = weight;
+            }
         }
     }
 
@@ -162,7 +165,22 @@ void AdjacencyList::print() const
     }
 }
 
-AdjacencyList AdjacencyList::MST_Prim(int starting)
+int AdjacencyList::countTotalWeight()
+{
+    int sum = 0;
+    for (int i = 0; i < V; i++)
+    {
+        AdjacencyListNode* temp = list[i];
+        while (temp != nullptr)
+        {
+            sum += temp->weight;
+            temp = temp->next;
+        }
+    }
+    return sum;                             //jeżeli graf jest nieskierowany, to trzeba pamiętać, że wynik jest podwojony
+}
+
+void AdjacencyList::MST_Prim(int starting)
 {
     AdjacencyList mst = AdjacencyList(V);
 
@@ -181,7 +199,7 @@ AdjacencyList AdjacencyList::MST_Prim(int starting)
     int u = starting;
 
     vertices[u].key = 0;                    //wierzchołek początkowy ma na start klucz 0
-    Q.fixDown(0);                     //naprawa całego kopca
+    Q.heapify();                             //naprawa całego kopca
 
     while (!Q.empty())
     {
@@ -190,13 +208,15 @@ AdjacencyList AdjacencyList::MST_Prim(int starting)
         AdjacencyListNode* node = list[u];
         while (node != nullptr)
         {
-            if (!considered[node->adjacentVertex] && vertices[node->adjacentVertex].key > vertices[u].key + node->weight)
+            if (!considered[node->adjacentVertex] && vertices[node->adjacentVertex].key > node->weight)
             {
-                vertices[node->adjacentVertex].key = vertices[u].key + node->weight;
+                vertices[node->adjacentVertex].key = node->weight;
                 vertices[node->adjacentVertex].previous = u;
+                Q.heapify();
             }
             node = node->next;
         }
+        considered[u] = true;
     }
 
     for (KeyPrevPair pair : vertices)
@@ -250,6 +270,79 @@ AdjacencyList AdjacencyList::MST_Prim(int starting)
         }
     }
 
-    return mst;
+    mst.print();
+    std::cout << "Całkowita waga krawędzi: " << mst.countTotalWeight() / 2 << std::endl;
 }
 
+void AdjacencyList::MST_Kruskal()
+{
+    Edge mstEdges[V - 1];                           //V - 1 krawędzi w MST
+    Edge allEdges[V * (V - 1) / 2];                 //max krawędzi w grafie: V * (V - 1) / 2
+    Heap Q = Heap<Edge *>(
+            V * (V - 1) / 2);      //kopiec operuje na wskaźnikach, więc tablica wyżej jest trochę sztuczna
+
+    int edgeCount = 0;
+
+    for (int i = 0; i < V; i++)                     //kolejka krawędzi posortowana rosnąco
+    {
+        AdjacencyListNode *temp = list[i];
+        while (temp != nullptr)
+        {
+            if (temp->adjacentVertex >= i)
+            {
+                Edge edge = Edge();
+                edge.weight = temp->weight;
+                edge.vertexA = i;
+                edge.vertexB = temp->adjacentVertex;
+                allEdges[edgeCount] = edge;
+                Q.add(&(allEdges[edgeCount]));
+                edgeCount++;
+            }
+            temp = temp->next;
+        }
+    }
+
+    Q.fixDown(0);
+
+    int parent[V];
+
+    for (int i = 0; i < V; i++)                     //poddrzewa rozłączne dla każdego wierzchołka
+    {
+        parent[i] = i;
+    }
+
+    int mstCount = 0;
+
+    while (!Q.empty())
+    {
+        Edge edge = *(Q.popRoot());
+
+        int parentA = Kruskal_parent(edge.vertexA, parent);
+        int parentB = Kruskal_parent(edge.vertexB, parent);
+
+
+        if (parentA != parentB)
+        {
+            mstEdges[mstCount] = edge;
+            mstCount++;
+            parent[parent[edge.vertexB]] = parentA;
+        }
+    }
+
+    int sum = 0;
+    for (Edge edge : mstEdges)
+    {
+        sum += edge.weight;
+        std::cout << "(" << edge.vertexA << " - " << edge.vertexB << ", " << edge.weight << ")" << std::endl;
+    }
+    std::cout << "Suma wag krawędzi: " << sum << std::endl;
+}
+
+int AdjacencyList::Kruskal_parent(int vertex, int *parents)
+{
+    if (parents[vertex] != vertex)
+    {
+        parents[vertex] = Kruskal_parent(parents[vertex], parents);
+    }
+    return parents[vertex];
+}

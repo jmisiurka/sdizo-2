@@ -29,9 +29,33 @@ struct KeyPrevPair
     }
 };
 
+//struktura reprezentująca krawędź do algorytmu Kruskala
+
+struct Edge
+{
+    int weight = 0;
+    int vertexA = -1;
+    int vertexB = -1;
+
+    bool operator<(Edge edge) const
+    {
+        return this->weight < edge.weight;
+    }
+
+    bool operator==(Edge edge) const
+    {
+        return this->weight == edge.weight;
+    }
+
+    bool operator>(Edge edge) const
+    {
+        return this->weight > edge.weight;
+    }
+};
 
 
-//klasa reprezentująca kopiec wykorzystywany jako kolejka priorytetowa
+
+//wzorzec reprezentujący kopiec wykorzystywany jako kolejka priorytetowa
 //implementacja tablicowa, minimum w korzeniu
 template <class T> class Heap           //w kopcu będą przechowywane różne typy, muszą tylko mieć zaimplementowane
 {                                       //operatory porównania (<, >, ==) oraz atrybut id
@@ -50,11 +74,11 @@ public:
 
     void fixDown(int index);
 
-    int find(int id);
-
     bool empty();
 
     T operator[](int index);
+
+    void heapify();
 };
 
 
@@ -69,7 +93,10 @@ Heap<T>::Heap(int size): currentSize(0)
 template<class T>
 Heap<T>::~Heap()
 {
-    delete[] table;
+    if (table != nullptr)
+    {
+        delete[] table;
+    }
 }
 
 template<class T>
@@ -97,7 +124,7 @@ T Heap<T>::popRoot()
 template<class T>
 void Heap<T>::fixUp(int index)
 {
-    if (table[(index - 1) / 2] > table[index])
+    if (*table[(index - 1) / 2] > *table[index])
     {
         T temp = table[(index - 1) / 2];
         table[(index - 1) / 2] = table[index];
@@ -138,20 +165,6 @@ void Heap<T>::fixDown(int index)
 }
 
 template<class T>
-int Heap<T>::find(int id)                       //zwraca indeks w tablicy elementu o podanym id
-{
-    for (int i = 0; i < currentSize; i++)
-    {
-        if ((*table[i])->id == id)
-        {
-            return i;
-        }
-    }
-
-    return -1;
-}
-
-template<class T>
 bool Heap<T>::empty()
 {
     return currentSize == 0;
@@ -164,5 +177,13 @@ T Heap<T>::operator[](int index)
     return val;
 }
 
+template<class T>
+void Heap<T>::heapify()
+{
+    for (int i = (currentSize - 2) / 2; i >= 0; i--)
+    {
+        fixDown(i);
+    }
+}
 
 #endif

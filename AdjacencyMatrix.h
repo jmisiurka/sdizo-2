@@ -17,13 +17,19 @@ public:
     AdjacencyMatrix(int V);
     ~AdjacencyMatrix();
 
-    void loadFromFile(const std::string& filename);
+    void loadFromFile(const std::string& filename, bool directed);
 
     int& get(int vertexA, int vertexB) const;
 
     void print() const;
 
-    AdjacencyMatrix MST_Prim(int starting = 0);
+    int countTotalWeight();
+
+    void MST_Prim(int starting = 0);
+
+    void MST_Kruskal();
+
+    int Kruskal_parent(int vertex, int *parents);
 };
 
 #endif
