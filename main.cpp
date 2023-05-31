@@ -41,7 +41,7 @@ int main()
                 mst_menu();
                 break;
             case 2:
-                //shortpath_menu();
+                shortpath_menu();
                 break;
             case 3:
                 break;
@@ -124,8 +124,8 @@ void mst_menu()
                     list = new AdjacencyList(0);
                 }
 
-                matrix->loadFromFile(filename, false);
-                list->loadFromFile(filename, false);
+                matrix->loadFromFile(filename, 0, nullptr);
+                list->loadFromFile(filename, 0, nullptr);
                 break;
             }
             case 2:
@@ -175,6 +175,7 @@ void shortpath_menu()
 {
     AdjacencyMatrix* matrix = nullptr;
     AdjacencyList* list = nullptr;
+    int startingVertex = -1;                //domyślnie brak, ale może być wczytany z pliku
 
     const std::string SHORTPATH_TEXT = "Wybierz jedną z opcji:\n"
                                  "\t1. Wczytaj graf z pliku\n"
@@ -242,8 +243,8 @@ void shortpath_menu()
                     list = new AdjacencyList(0);
                 }
 
-                matrix->loadFromFile(filename, false);
-                list->loadFromFile(filename, false);
+                matrix->loadFromFile(filename, 1, &startingVertex);
+                list->loadFromFile(filename, 1, &startingVertex);
                 break;
             }
             case 2:
@@ -277,8 +278,8 @@ void shortpath_menu()
                     std::cout << "Nie załadowano grafu" << std::endl;
                     break;
                 }
-                matrix->Shortpath_BF();
-                list->Shortpath_BF();
+                matrix->Shortpath_BF(startingVertex);
+                list->Shortpath_BF(startingVertex);
                 break;
             }
             default:

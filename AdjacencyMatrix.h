@@ -17,7 +17,7 @@ public:
     AdjacencyMatrix(int V);
     ~AdjacencyMatrix();
 
-    void loadFromFile(const std::string& filename, bool directed);
+    void loadFromFile(const std::string& filename, int problem, int* additionalValues);
 
     int& get(int vertexA, int vertexB) const;
 
@@ -30,6 +30,10 @@ public:
     void MST_Kruskal();
 
     int Kruskal_parent(int vertex, int *parents);
+
+    void Shortpath_Dijkstra(int starting);
+
+    void Shortpath_BF(int starting);
 };
 
 #endif

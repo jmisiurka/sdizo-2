@@ -30,7 +30,6 @@ struct KeyPrevPair
 };
 
 //struktura reprezentująca krawędź do algorytmu Kruskala
-
 struct Edge
 {
     int weight = 0;
@@ -53,6 +52,28 @@ struct Edge
     }
 };
 
+//struktura reprezentująca odległość od wierzchołka początkowego i poprzedni wierzchołek do algorytmu Dijkstry
+struct DistPrevPair
+{
+    int id = -1;
+    int distance = INT_MAX;
+    int previous = -1;                                  // -1 oznacza, że niezdefiniowany
+
+    bool operator<(DistPrevPair other) const
+    {
+        return this->distance < other.distance;
+    }
+
+    bool operator>(DistPrevPair other) const
+    {
+        return this->distance > other.distance;
+    }
+
+    bool operator==(DistPrevPair other) const
+    {
+        return this->distance == other.distance;
+    }
+};
 
 
 //wzorzec reprezentujący kopiec wykorzystywany jako kolejka priorytetowa

@@ -31,7 +31,7 @@ AdjacencyList::~AdjacencyList()
     delete[] list;                                      //usunięcie pamięci tablicy list
 }
 
-void AdjacencyList::loadFromFile(const std::string &filename, bool directed)
+void AdjacencyList::loadFromFile(const std::string &filename, int problem, int* additionalValues)
 {
     std::ifstream filestream(filename);
 
@@ -49,6 +49,15 @@ void AdjacencyList::loadFromFile(const std::string &filename, bool directed)
     int numberOfEdges, numberOfVertices;
     filestream >> numberOfEdges;
     filestream >> numberOfVertices;
+
+    if (problem == 1)
+    {
+        filestream >> *additionalValues;            //wczytanie wierzchołka początkowego dla shortpath
+    } else if (problem == 2)
+    {
+        filestream >> additionalValues[0];          //wczytanie wierzchołków dla problemu przepływu
+        filestream >> additionalValues[1];
+    }
 
     V = numberOfVertices;
 
@@ -87,7 +96,7 @@ void AdjacencyList::loadFromFile(const std::string &filename, bool directed)
             temp->weight = weight;
         }
 
-        if (!directed)                //jeśli graf nie jest skierowany, to wrzucamy krawędź do obu wierzchołków
+        if (problem == 0)                //jeśli graf nie jest skierowany, to wrzucamy krawędź do obu wierzchołków
         {
             if (list[vertexB] == nullptr)                   //lista krawędzi przy B jest pusta
             {
@@ -345,4 +354,127 @@ int AdjacencyList::Kruskal_parent(int vertex, int *parents)
         parents[vertex] = Kruskal_parent(parents[vertex], parents);
     }
     return parents[vertex];
+}
+
+void AdjacencyList::Shortpath_Dijkstra(int starting)
+{
+    DistPrevPair vertices[V];
+    bool considered[V];
+
+    Heap Q = Heap<DistPrevPair *>(V);
+    //to może mieć wpływ na złożoność
+    for (int i = 0; i < V; i++)             //przypisanie numerów wierzchołków (póki co wszystkie elementy takie same)
+    {
+        vertices[i].id = i;
+        Q.add(&vertices[i]);
+        considered[i] = false;
+    }
+
+    int u = starting;
+
+    vertices[u].distance = 0;
+    Q.heapify();
+
+    while (!Q.empty())
+    {
+        u = Q.popRoot()->id;
+
+        AdjacencyListNode* node = list[u];
+        while (node != nullptr)
+        {
+            if (!considered[node->adjacentVertex] && vertices[node->adjacentVertex].distance > node->weight + vertices[u].distance)
+            {
+                vertices[node->adjacentVertex].distance = node->weight + vertices[u].distance;
+                vertices[node->adjacentVertex].previous = u;
+                Q.heapify();
+            }
+            node = node->next;
+        }
+        considered[u] = true;
+    }
+
+    std::cout << "Dijkstra - lista sąsiedztwa" << std::endl;
+
+    for (int i = 0; i < V; i++)
+    {
+        std::cout << "Wierzchołek: " << i << std::endl;
+        std::cout << "\tOdległość od wierzchołka początkowego: " << vertices[i].distance << std::endl;
+        std::cout << "\tDroga: " << i;
+        int temp = vertices[i].previous;
+        while (temp >= 0)
+        {
+            std::cout << "<-" << temp;
+            temp = vertices[temp].previous;
+        }
+        std::cout << std::endl;
+    }
+}
+
+void AdjacencyList::Shortpath_BF(int starting)
+{
+    DistPrevPair vertices[V];
+    bool considered[V];
+
+    for (int i = 0; i < V; i++)                     //kolejka krawędzi posortowana rosnąco
+    {
+        vertices[i].id = i;
+        considered[i] = false;
+    }
+
+    int u = starting;
+    vertices[u].distance = 0;
+
+    bool changed = true;                            //jeżeli w przejściu nic się nie zmieni, to można skończyć
+    for (int i = 0; i < V && changed; i++)
+    {
+        changed = false;
+
+        for (int j = 0; j < V; j++)
+        {
+            AdjacencyListNode *temp = list[j];
+            while (temp != nullptr)
+            {
+                if (vertices[temp->adjacentVertex].distance > vertices[j].distance + temp->weight)
+                {
+                    changed = true;
+
+                    vertices[temp->adjacentVertex].distance = vertices[j].distance + temp->weight;
+                    vertices[temp->adjacentVertex].previous = j;
+                }
+
+                temp = temp->next;
+            }
+        }
+    }
+
+    for (int i = 0; i < V; i++)
+    {
+        AdjacencyListNode *temp = list[i];
+        while (temp != nullptr)
+        {
+            if (vertices[temp->adjacentVertex].distance > vertices[i].distance + temp->weight)
+            {
+                std::cout << "W grafie wystąpił cykl o wadze ujemnej - wyniki są nieprawidłowe" << std::endl;
+                return;
+            }
+
+            temp = temp->next;
+        }
+    }
+
+    std::cout << "Bellman-Ford - lista sąsiedztwa" << std::endl;
+
+    for (int i = 0; i < V; i++)
+    {
+        std::cout << "Wierzchołek: " << i << std::endl;
+        std::cout << "\tOdległość od wierzchołka początkowego: " << vertices[i].distance << std::endl;
+        std::cout << "\tDroga: " << i;
+        int temp = vertices[i].previous;
+        while (temp >= 0)
+        {
+            std::cout << "<-" << temp;
+            temp = vertices[temp].previous;
+        }
+        std::cout << std::endl;
+    }
 }

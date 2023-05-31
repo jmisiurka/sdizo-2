@@ -24,7 +24,7 @@ AdjacencyMatrix::~AdjacencyMatrix()
     delete[] matrix;
 }
 
-void AdjacencyMatrix::loadFromFile(const std::string &filename, bool directed)
+void AdjacencyMatrix::loadFromFile(const std::string &filename, int problem, int* additionalValues)
 {
     std::ifstream filestream(filename);
 
@@ -37,6 +37,15 @@ void AdjacencyMatrix::loadFromFile(const std::string &filename, bool directed)
     int numberOfEdges, numberOfVertices;
     filestream >> numberOfEdges;
     filestream >> numberOfVertices;
+
+    if (problem == 1)
+    {
+        filestream >> *additionalValues;            //wczytanie wierzchołka początkowego dla shortpath
+    } else if (problem == 2)
+    {
+        filestream >> additionalValues[0];          //wczytanie wierzchołków dla problemu przepływu
+        filestream >> additionalValues[1];
+    }
 
     for (int i = 0; i < V; i++)                     //usunięcie dotychczasowej macierzy
     {
@@ -64,7 +73,7 @@ void AdjacencyMatrix::loadFromFile(const std::string &filename, bool directed)
         filestream >> weight;
 
         matrix[vertexA][vertexB] = weight;
-        if (!directed)
+        if (problem == 0)
         {
             matrix[vertexB][vertexA] = weight;
         }
@@ -243,3 +252,130 @@ int AdjacencyMatrix::Kruskal_parent(int vertex, int *parents)
     }
     return parents[vertex];
 }
+
+void AdjacencyMatrix::Shortpath_Dijkstra(int starting)
+{
+    DistPrevPair vertices[V];
+    bool considered[V];
+
+    Heap Q = Heap<DistPrevPair *>(V);
+    //to może mieć wpływ na złożoność
+    for (int i = 0; i < V; i++)             //przypisanie numerów wierzchołków (póki co wszystkie elementy takie same)
+    {
+        vertices[i].id = i;
+        Q.add(&vertices[i]);
+        considered[i] = false;
+    }
+
+    int u = starting;
+
+    vertices[u].distance = 0;
+    Q.heapify();
+
+    while (!Q.empty())
+    {
+        u = Q.popRoot()->id;
+        for (int i = 0; i < V; i++)
+        {
+            if (!considered[i] && matrix[u][i] != 0)
+            {
+                if (matrix[u][i] + vertices[u].distance < vertices[i].distance)     //ścieżka przez u krótsza niż dotychczasowa
+                {
+                    vertices[i].distance = matrix[u][i] + vertices[u].distance;
+                    vertices[i].previous = u;
+                    Q.heapify();
+                }
+            }
+        }
+        considered[u] = true;
+    }
+
+    std::cout << "Dijkstra - macierz sąsiedztwa" << std::endl;
+
+    for (int i = 0; i < V; i++)
+    {
+        std::cout << "Wierzchołek: " << i << std::endl;
+        std::cout << "\tOdległość od wierzchołka początkowego: " << vertices[i].distance << std::endl;
+        std::cout << "\tDroga: " << i;
+        int temp = vertices[i].previous;
+        while (temp >= 0)
+        {
+            std::cout << "<-" << temp;
+            temp = vertices[temp].previous;
+        }
+        std::cout << std::endl;
+    }
+}
+
+void AdjacencyMatrix::Shortpath_BF(int starting)
+{
+    DistPrevPair vertices[V];
+    bool considered[V];
+
+    Edge edges[V * (V - 1) / 2];                    //max liczba krawędzi w grafie
+    int edgeCount = 0;
+
+    for (int i = 0; i < V; i++)                     //kolejka krawędzi posortowana rosnąco
+    {
+        vertices[i].id = i;
+        considered[i] = false;
+
+        for (int j = 0; j < V; j++)                 //wpisanie krawędzi do listy
+        {
+            if (matrix[i][j] != 0)
+            {
+                Edge edge = Edge();
+                edge.weight = matrix[i][j];
+                edge.vertexA = i;
+                edge.vertexB = j;
+                edges[edgeCount] = edge;
+                edgeCount++;
+            }
+        }
+    }
+
+    int u = starting;
+    vertices[u].distance = 0;
+
+    bool changed = true;                            //jeżeli w przejściu nic się nie zmieni, to można skończyć
+    for (int i = 0; i < V && changed; i++)
+    {
+        changed = false;
+        for (Edge e : edges)
+        {
+            if (vertices[e.vertexB].distance > vertices[e.vertexA].distance + e.weight)
+            {
+                changed = true;
+
+                vertices[e.vertexB].distance = vertices[e.vertexA].distance + e.weight;
+                vertices[e.vertexB].previous = e.vertexA;
+            }
+        }
+    }
+
+    for (Edge e : edges)                            //sprawdzenie cykli ujemnych
+    {
+        if (vertices[e.vertexB].distance > vertices[e.vertexA].distance + e.weight)
+        {
+            std::cout << "W grafie wystąpił cykl o wadze ujemnej - wyniki są nieprawidłowe" << std::endl;
+            return;
+        }
+    }
+
+    std::cout << "Bellman-Ford - macierz sąsiedztwa" << std::endl;
+
+    for (int i = 0; i < V; i++)
+    {
+        std::cout << "Wierzchołek: " << i << std::endl;
+        std::cout << "\tOdległość od wierzchołka początkowego: " << vertices[i].distance << std::endl;
+        std::cout << "\tDroga: " << i;
+        int temp = vertices[i].previous;
+        while (temp >= 0)
+        {
+            std::cout << "<-" << temp;
+            temp = vertices[temp].previous;
+        }
+        std::cout << std::endl;
+    }
+}
+
