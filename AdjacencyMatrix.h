@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iostream>
 #include "Heap.h"
+#include "AdjacencyList.h"
 
 //Klasa reprezentująca macierz sąsiedztwa
 class AdjacencyMatrix
@@ -18,6 +19,8 @@ public:
     ~AdjacencyMatrix();
 
     void loadFromFile(const std::string& filename, int problem, int* additionalValues);
+
+    void loadFromAdjacencyList(const AdjacencyList& graph, int V);
 
     int& get(int vertexA, int vertexB) const;
 

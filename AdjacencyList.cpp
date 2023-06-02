@@ -1,3 +1,5 @@
+#include <random>
+#include <chrono>
 #include "AdjacencyList.h"
 #include "Heap.h"
 
@@ -122,6 +124,44 @@ void AdjacencyList::loadFromFile(const std::string &filename, int problem, int* 
     }
 
     filestream.close();
+}
+
+void AdjacencyList::generateRandomGraph(int graphV, bool directed, int minWeight, int maxWeight, int density)
+{
+    clearList();
+
+    V = graphV;
+    delete[] list;
+    list = new AdjacencyListNode* [V];
+    for (int i = 0; i < V; i++)
+    {
+        list[i] = nullptr;
+    }
+
+
+
+    std::default_random_engine rng(std::chrono::system_clock::now().time_since_epoch().count());    //generator liczb pseudolosowych
+    std::uniform_int_distribution<int> random_int;
+
+    if (!directed)          //graf nieskierowany - robimy MST i dołączamy krawędzie
+    {
+        for (int i = 1; i < V; i++)
+        {
+            int adjacentVertex = random_int(rng) % i;   //losujemy przyłączony wierzchołek z zakresu [0; i-1]
+            int weight = (random_int(rng) % (maxWeight + 1 - minWeight)) + minWeight;
+            list[i]->adjacentVertex = adjacentVertex;
+            list[i]->weight = weight;
+            list[adjacentVertex]->adjacentVertex = i;
+            list[adjacentVertex]->weight = weight;
+        }
+
+        //for (int i = V - 1; i < )
+    }
+}
+
+AdjacencyListNode* AdjacencyList::getNode(int i) const
+{
+    return list[i];
 }
 
 int AdjacencyList::get(int vertexA, int vertexB) const
@@ -413,12 +453,10 @@ void AdjacencyList::Shortpath_Dijkstra(int starting)
 void AdjacencyList::Shortpath_BF(int starting)
 {
     DistPrevPair vertices[V];
-    bool considered[V];
 
     for (int i = 0; i < V; i++)                     //kolejka krawędzi posortowana rosnąco
     {
         vertices[i].id = i;
-        considered[i] = false;
     }
 
     int u = starting;
@@ -434,7 +472,7 @@ void AdjacencyList::Shortpath_BF(int starting)
             AdjacencyListNode *temp = list[j];
             while (temp != nullptr)
             {
-                if (vertices[temp->adjacentVertex].distance > vertices[j].distance + temp->weight)
+                if (vertices[j].distance != INT_MAX && vertices[temp->adjacentVertex].distance > vertices[j].distance + temp->weight)
                 {
                     changed = true;
 
@@ -446,6 +484,8 @@ void AdjacencyList::Shortpath_BF(int starting)
             }
         }
     }
+
+    std::cout << "Bellman-Ford - lista sąsiedztwa" << std::endl;
 
     for (int i = 0; i < V; i++)
     {
@@ -461,8 +501,6 @@ void AdjacencyList::Shortpath_BF(int starting)
             temp = temp->next;
         }
     }
-
-    std::cout << "Bellman-Ford - lista sąsiedztwa" << std::endl;
 
     for (int i = 0; i < V; i++)
     {

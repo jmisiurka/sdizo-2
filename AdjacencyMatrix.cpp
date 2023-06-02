@@ -82,6 +82,37 @@ void AdjacencyMatrix::loadFromFile(const std::string &filename, int problem, int
     filestream.close();
 }
 
+void AdjacencyMatrix::loadFromAdjacencyList(const AdjacencyList& graph, int graphV)
+{
+    for (int i = 0; i < V; i++)                     //usunięcie dotychczasowej macierzy
+    {
+        delete[] matrix[i];
+    }
+    delete[] matrix;
+
+    V = graphV;
+
+    matrix = new int *[V];                           //alokacja 1 wymiaru tablicy
+    for (int i = 0; i < V; i++)
+    {
+        matrix[i] = new int[V];                     //alokacja 2 wymiaru tablicy i wyzerowanie wszystkich komórek
+        for (int j = 0; j < V; j++)
+        {
+            matrix[i][j] = 0;
+        }
+    }
+
+    for (int i = 0; i < V; i++)
+    {
+        AdjacencyListNode* temp = graph.getNode(i);
+        while (temp != nullptr)
+        {
+            matrix[i][temp->adjacentVertex] = temp->weight;
+            temp = temp->next;
+        }
+    }
+}
+
 int &AdjacencyMatrix::get(int vertexA, int vertexB) const
 {
     return matrix[vertexA][vertexB];
@@ -310,28 +341,10 @@ void AdjacencyMatrix::Shortpath_Dijkstra(int starting)
 void AdjacencyMatrix::Shortpath_BF(int starting)
 {
     DistPrevPair vertices[V];
-    bool considered[V];
-
-    Edge edges[V * (V - 1) / 2];                    //max liczba krawędzi w grafie
-    int edgeCount = 0;
 
     for (int i = 0; i < V; i++)                     //kolejka krawędzi posortowana rosnąco
     {
         vertices[i].id = i;
-        considered[i] = false;
-
-        for (int j = 0; j < V; j++)                 //wpisanie krawędzi do listy
-        {
-            if (matrix[i][j] != 0)
-            {
-                Edge edge = Edge();
-                edge.weight = matrix[i][j];
-                edge.vertexA = i;
-                edge.vertexB = j;
-                edges[edgeCount] = edge;
-                edgeCount++;
-            }
-        }
     }
 
     int u = starting;
@@ -341,24 +354,33 @@ void AdjacencyMatrix::Shortpath_BF(int starting)
     for (int i = 0; i < V && changed; i++)
     {
         changed = false;
-        for (Edge e : edges)
+        for (int a = 0; a < V; a++)
         {
-            if (vertices[e.vertexB].distance > vertices[e.vertexA].distance + e.weight)
+            for (int b = 0; b < V; b++)
             {
-                changed = true;
+                if (vertices[a].distance == INT_MAX)
+                    break;
 
-                vertices[e.vertexB].distance = vertices[e.vertexA].distance + e.weight;
-                vertices[e.vertexB].previous = e.vertexA;
+                if (matrix[a][b] != 0 && vertices[b].distance > vertices[a].distance + matrix[a][b])
+                {
+                    changed = true;
+
+                    vertices[b].distance = vertices[a].distance + matrix[a][b];
+                    vertices[b].previous = a;
+                }
             }
         }
     }
 
-    for (Edge e : edges)                            //sprawdzenie cykli ujemnych
+    for (int i = 0; i < V; i++)                            //sprawdzenie cykli ujemnych
     {
-        if (vertices[e.vertexB].distance > vertices[e.vertexA].distance + e.weight)
+        for (int j = 0; j < V; j++)
         {
-            std::cout << "W grafie wystąpił cykl o wadze ujemnej - wyniki są nieprawidłowe" << std::endl;
-            return;
+            if (matrix[i][j] != 0 && vertices[j].distance > vertices[i].distance + matrix[i][j])
+            {
+                std::cout << "W grafie wystąpił cykl o wadze ujemnej - wyniki są nieprawidłowe" << std::endl;
+                return;
+            }
         }
     }
 

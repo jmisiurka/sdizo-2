@@ -24,6 +24,10 @@ public:
 
     void loadFromFile(const std::string& filename, int problem, int* additionalValues);
 
+    void generateRandomGraph(int graphV, bool directed, int minWeight, int maxWeight, int density);
+
+    AdjacencyListNode* getNode(int i) const;
+
     int get(int vertexA, int vertexB) const;
 
     void clearList();
