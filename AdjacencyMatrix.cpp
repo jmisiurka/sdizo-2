@@ -401,3 +401,15 @@ void AdjacencyMatrix::Shortpath_BF(int starting)
     }
 }
 
+bool AdjacencyMatrix::BFS(int start, int end, int *parents)
+{
+
+}
+
+bool AdjacencyMatrix::DFS(int start, int end, int *parents)
+{}
+
+void AdjacencyMatrix::Ford_Fulkerson(int start, int end, int pathfinding)
+{
+
+}

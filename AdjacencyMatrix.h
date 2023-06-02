@@ -37,6 +37,12 @@ public:
     void Shortpath_Dijkstra(int starting);
 
     void Shortpath_BF(int starting);
+
+    bool BFS(int start, int end, int* parents);
+
+    bool DFS(int start, int end, int* parents);
+
+    void Ford_Fulkerson(int start, int end, int pathfinding);
 };
 
 #endif
