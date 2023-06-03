@@ -159,8 +159,6 @@ int AdjacencyMatrix::countTotalWeight()
 
 void AdjacencyMatrix::MST_Prim(int starting)
 {
-    AdjacencyMatrix mst = AdjacencyMatrix(V);
-
     KeyPrevPair vertices[V];                //tablica wszystkich wierzchołków
     bool considered[V];                     //tablica rozpatrzonych wierzchołków
 
@@ -198,19 +196,20 @@ void AdjacencyMatrix::MST_Prim(int starting)
     }
 
     int sum = 0;
+
     for (KeyPrevPair pair: vertices)
     {
         int vertexA = pair.id;
         int vertexB = pair.previous;
+
+
         if (vertexB != -1)
         {
             sum += matrix[vertexA][vertexB];
-            mst.matrix[vertexA][vertexB] = matrix[vertexA][vertexB];
-            mst.matrix[vertexB][vertexA] = matrix[vertexB][vertexA];
+            std::cout << "(" << vertexA << " - " << vertexB << ", " << matrix[vertexA][vertexB] << ")" << std::endl;
         }
     }
 
-    mst.print();
     std::cout << "Suma wag krawędzi:" << sum << std::endl << std::endl;
 }
 
@@ -401,15 +400,114 @@ void AdjacencyMatrix::Shortpath_BF(int starting)
     }
 }
 
-bool AdjacencyMatrix::BFS(int start, int end, int *parents)
+bool AdjacencyMatrix::BFS(AdjacencyMatrix &graph, int start, int end, int *parents)
 {
+    char color[V];
+    for (int i = 0; i < V; i++)
+    {
+        parents[i] = -1;
+        color[i] = 'W';
+    }
 
+    color[start] = 'G';
+    parents[start] = start;
+    Queue q;
+    q.enqueue(start);
+
+    int u;
+
+    while (!q.empty())
+    {
+        u = q.dequeue();
+        for (int i = 0; i < V; i++)
+        {
+            if (graph.matrix[u][i] > 0 && color[i] == 'W')
+            {
+                parents[i] = u;
+                if (i == end)
+                {
+                    return true;        //znaleziono drogę ze start do end, koniec
+                }
+                color[i] = 'G';
+                q.enqueue(i);
+            }
+        }
+        color[u] = 'B';
+    }
+
+    return false;               //nie znaleziono drogi z start do end
 }
 
-bool AdjacencyMatrix::DFS(int start, int end, int *parents)
-{}
+bool AdjacencyMatrix::DFS(AdjacencyMatrix &graph, int start, int end, int *parents)
+{
+    char color[V];
+    for (int i = 0; i < V; i++)
+    {
+        color[i] = 'W';
+        parents[i] = -1;
+    }
+
+    //TODO
+}
+
+void AdjacencyMatrix::DFSVisit(AdjacencyMatrix &graph, int u, char *color, int *parents)
+{
+    //TODO
+}
 
 void AdjacencyMatrix::Ford_Fulkerson(int start, int end, int pathfinding)
 {
+    AdjacencyMatrix residualGraph = AdjacencyMatrix(V);
 
+    for (int i = 0; i < V; i++)
+    {
+        for (int j = 0; j < V; j++)
+        {
+            residualGraph.matrix[i][j] = matrix[i][j];
+        }
+    }
+
+    int parent[V];
+
+    int maxFlow = 0;
+
+    bool pathExists;
+    if (pathfinding == 1)
+    {
+        pathExists = BFS(residualGraph, start, end, parent);
+    } else if (pathfinding == 2) {
+        pathExists = DFS(residualGraph, start, end, parent);
+    }
+
+    do
+    {
+        int pathFlow = INT_MAX;
+
+        for (int i = end; i != start; i = parent[i])        //przejście od końca do początku po ścieżce
+        {
+            int j = parent[i];
+            if (pathFlow > residualGraph.matrix[j][i])              //szukamy połączenia o najmniejszym przepływie
+            {
+                pathFlow = residualGraph.matrix[j][i];
+            }
+        }
+
+        for (int i = end; i != start; i = parent[i])            //zmieniamy przepływ w grafie rezydualnym
+        {
+            int j = parent[i];
+            residualGraph.matrix[j][i] -= pathFlow;
+            residualGraph.matrix[i][j] += pathFlow;
+        }
+
+        maxFlow += pathFlow;
+
+        if (pathfinding == 1)
+        {
+            pathExists = BFS(residualGraph, start, end, parent);
+        } else if (pathfinding == 2) {
+            pathExists = DFS(residualGraph, start, end, parent);
+        }
+    } while (pathExists);
+
+    std::cout << "Maksymalny przepływ: " << maxFlow << std::endl;
 }

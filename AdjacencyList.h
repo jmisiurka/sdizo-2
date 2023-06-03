@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <fstream>
+#include "Queue.h"
 
 //struktura pojedynczego wpisu w liście sąsiedztwa zawierająca wskaźnik na
 //kolejny element, numer przyłączonego wierzchołka i wagę krawędzi
@@ -30,11 +31,11 @@ public:
 
     int get(int vertexA, int vertexB) const;
 
+    void removeEdge(int i, int j);
+
     void clearList();
 
     void print() const;
-
-    int countTotalWeight();
 
     void MST_Prim(int starting = 0);
 
@@ -45,6 +46,14 @@ public:
     void Shortpath_Dijkstra(int starting);
 
     void Shortpath_BF(int starting);
+
+    bool BFS(AdjacencyList &graph, int start, int end, int *parents);
+
+    bool DFS(AdjacencyList &graph, int start, int end, int *parents);
+
+    void DFSVisit(AdjacencyList &graph, int u, char *color, int *parents);
+
+    void Ford_Fulkerson(int start, int end, int pathfinding);
 };
 
 #endif

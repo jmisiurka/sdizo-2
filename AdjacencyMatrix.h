@@ -7,6 +7,7 @@
 #include <iostream>
 #include "Heap.h"
 #include "AdjacencyList.h"
+#include "Queue.h"
 
 //Klasa reprezentująca macierz sąsiedztwa
 class AdjacencyMatrix
@@ -38,9 +39,11 @@ public:
 
     void Shortpath_BF(int starting);
 
-    bool BFS(int start, int end, int* parents);
+    bool BFS(AdjacencyMatrix &graph, int start, int end, int* parents);
 
-    bool DFS(int start, int end, int* parents);
+    bool DFS(AdjacencyMatrix &graph, int start, int end, int* parents);
+
+    void DFSVisit(AdjacencyMatrix &graph, int u, char *color, int *parents);
 
     void Ford_Fulkerson(int start, int end, int pathfinding);
 };

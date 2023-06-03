@@ -10,7 +10,7 @@ AdjacencyList::AdjacencyList(int V) : V(V)
         list = nullptr;
         return;
     }
-    list = new AdjacencyListNode* [V];                   //alokacja pamięci pod listy
+    list = new AdjacencyListNode *[V];                   //alokacja pamięci pod listy
     for (int i = 0; i < V; i++)
     {
         list[i] = nullptr;
@@ -33,7 +33,7 @@ AdjacencyList::~AdjacencyList()
     delete[] list;                                      //usunięcie pamięci tablicy list
 }
 
-void AdjacencyList::loadFromFile(const std::string &filename, int problem, int* additionalValues)
+void AdjacencyList::loadFromFile(const std::string &filename, int problem, int *additionalValues)
 {
     std::ifstream filestream(filename);
 
@@ -64,7 +64,7 @@ void AdjacencyList::loadFromFile(const std::string &filename, int problem, int* 
     V = numberOfVertices;
 
     delete[] list;
-    list = new AdjacencyListNode* [V];
+    list = new AdjacencyListNode *[V];
     for (int i = 0; i < V; i++)
     {
         list[i] = nullptr;
@@ -132,15 +132,15 @@ void AdjacencyList::generateRandomGraph(int graphV, bool directed, int minWeight
 
     V = graphV;
     delete[] list;
-    list = new AdjacencyListNode* [V];
+    list = new AdjacencyListNode *[V];
     for (int i = 0; i < V; i++)
     {
         list[i] = nullptr;
     }
 
 
-
-    std::default_random_engine rng(std::chrono::system_clock::now().time_since_epoch().count());    //generator liczb pseudolosowych
+    std::default_random_engine rng(
+            std::chrono::system_clock::now().time_since_epoch().count());    //generator liczb pseudolosowych
     std::uniform_int_distribution<int> random_int;
 
     if (!directed)          //graf nieskierowany - robimy MST i dołączamy krawędzie
@@ -159,7 +159,7 @@ void AdjacencyList::generateRandomGraph(int graphV, bool directed, int minWeight
     }
 }
 
-AdjacencyListNode* AdjacencyList::getNode(int i) const
+AdjacencyListNode *AdjacencyList::getNode(int i) const
 {
     return list[i];
 }
@@ -179,11 +179,38 @@ int AdjacencyList::get(int vertexA, int vertexB) const
     return 0;                                           //brak krawędzi łączącej A i B
 }
 
+void AdjacencyList::removeEdge(int i, int j)
+{
+    AdjacencyListNode* temp = list[i];
+
+    if (temp->next == nullptr)
+    {
+        list[i] = nullptr;
+        delete temp;
+        return;
+    }
+
+    while (temp->next != nullptr && temp->next->adjacentVertex != j)
+    {
+        temp = temp->next;
+    }
+
+    if (temp->next == nullptr)
+    {
+        std::cout << "Krawędź nie istnieje" << std::endl;
+        return;
+    }
+
+    AdjacencyListNode* toBeDeleted = temp->next;
+    temp->next = temp->next->next;
+    delete toBeDeleted;
+}
+
 void AdjacencyList::clearList()                         //czyszczenie zawartości listy
 {
     for (int i = 0; i < V; i++)
     {
-        AdjacencyListNode* head = list[i];
+        AdjacencyListNode *head = list[i];
         if (head != nullptr)
         {
             while (head->next != nullptr)
@@ -203,7 +230,7 @@ void AdjacencyList::print() const
 {
     for (int i = 0; i < V; i++)
     {
-        AdjacencyListNode* temp = list[i];
+        AdjacencyListNode *temp = list[i];
         std::cout << i << ": ";
         while (temp != nullptr)
         {
@@ -214,29 +241,12 @@ void AdjacencyList::print() const
     }
 }
 
-int AdjacencyList::countTotalWeight()
-{
-    int sum = 0;
-    for (int i = 0; i < V; i++)
-    {
-        AdjacencyListNode* temp = list[i];
-        while (temp != nullptr)
-        {
-            sum += temp->weight;
-            temp = temp->next;
-        }
-    }
-    return sum;                             //jeżeli graf jest nieskierowany, to trzeba pamiętać, że wynik jest podwojony
-}
-
 void AdjacencyList::MST_Prim(int starting)
 {
-    AdjacencyList mst = AdjacencyList(V);
-
     KeyPrevPair vertices[V];                //tablica wszystkich wierzchołków
     bool considered[V];                     //tablica rozpatrzonych wierzchołków
 
-    Heap Q = Heap<KeyPrevPair*>(V);
+    Heap Q = Heap<KeyPrevPair *>(V);
     //to może mieć wpływ na złożoność
     for (int i = 0; i < V; i++)             //przypisanie numerów wierzchołków (póki co wszystkie elementy takie same)
     {
@@ -254,7 +264,7 @@ void AdjacencyList::MST_Prim(int starting)
     {
         u = Q.popRoot()->id;                //pobranie elementu z kolejki
 
-        AdjacencyListNode* node = list[u];
+        AdjacencyListNode *node = list[u];
         while (node != nullptr)
         {
             if (!considered[node->adjacentVertex] && vertices[node->adjacentVertex].key > node->weight)
@@ -268,59 +278,23 @@ void AdjacencyList::MST_Prim(int starting)
         considered[u] = true;
     }
 
-    for (KeyPrevPair pair : vertices)
+    int sum = 0;
+
+    for (KeyPrevPair pair: vertices)
     {
         int vertexA = pair.id;
         int vertexB = pair.previous;
 
-        if (vertexB >= 0)                                      //pomijamy dla wierzchołka startowego
+
+        if (vertexB != -1)
         {
-            if (mst.list[vertexA] == nullptr)                   //lista krawędzi przy A jest pusta
-            {
-                mst.list[vertexA] = new AdjacencyListNode();
-                mst.list[vertexA]->next = nullptr;
-                mst.list[vertexA]->adjacentVertex = vertexB;
-                mst.list[vertexA]->weight = get(vertexA, vertexB);
-            } else
-            {                                            //lista krawędzi przy A nie jest pusta
-                AdjacencyListNode *temp = mst.list[vertexA];
-                while (temp->next != nullptr)                   //przejście do ostatniego elementu listy
-                {
-                    temp = temp->next;
-                }
-
-                temp->next = new AdjacencyListNode();           //utworzenie nowego elementu
-                temp = temp->next;
-                temp->next = nullptr;
-                temp->adjacentVertex = vertexB;
-                temp->weight = get(vertexA, vertexB);
-            }
-
-            if (mst.list[vertexB] == nullptr)                   //lista krawędzi przy A jest pusta
-            {
-                mst.list[vertexB] = new AdjacencyListNode();
-                mst.list[vertexB]->next = nullptr;
-                mst.list[vertexB]->adjacentVertex = vertexA;
-                mst.list[vertexB]->weight = get(vertexA, vertexB);
-            } else
-            {                                            //lista krawędzi przy A nie jest pusta
-                AdjacencyListNode *temp = mst.list[vertexB];
-                while (temp->next != nullptr)                   //przejście do ostatniego elementu listy
-                {
-                    temp = temp->next;
-                }
-
-                temp->next = new AdjacencyListNode();           //utworzenie nowego elementu
-                temp = temp->next;
-                temp->next = nullptr;
-                temp->adjacentVertex = vertexA;
-                temp->weight = get(vertexA, vertexB);
-            }
+            sum += get(vertexA, vertexB);
+            std::cout << "(" << vertexA << " - " << vertexB << ", " << get(vertexA, vertexB) << ")" << std::endl;
         }
     }
 
-    mst.print();
-    std::cout << "Całkowita waga krawędzi: " << mst.countTotalWeight() / 2 << std::endl;
+
+    std::cout << "Całkowita waga krawędzi: " << sum << std::endl;
 }
 
 void AdjacencyList::MST_Kruskal()
@@ -379,7 +353,7 @@ void AdjacencyList::MST_Kruskal()
     }
 
     int sum = 0;
-    for (Edge edge : mstEdges)
+    for (Edge edge: mstEdges)
     {
         sum += edge.weight;
         std::cout << "(" << edge.vertexA << " - " << edge.vertexB << ", " << edge.weight << ")" << std::endl;
@@ -419,10 +393,11 @@ void AdjacencyList::Shortpath_Dijkstra(int starting)
     {
         u = Q.popRoot()->id;
 
-        AdjacencyListNode* node = list[u];
+        AdjacencyListNode *node = list[u];
         while (node != nullptr)
         {
-            if (!considered[node->adjacentVertex] && vertices[node->adjacentVertex].distance > node->weight + vertices[u].distance)
+            if (!considered[node->adjacentVertex] &&
+                vertices[node->adjacentVertex].distance > node->weight + vertices[u].distance)
             {
                 vertices[node->adjacentVertex].distance = node->weight + vertices[u].distance;
                 vertices[node->adjacentVertex].previous = u;
@@ -472,7 +447,8 @@ void AdjacencyList::Shortpath_BF(int starting)
             AdjacencyListNode *temp = list[j];
             while (temp != nullptr)
             {
-                if (vertices[j].distance != INT_MAX && vertices[temp->adjacentVertex].distance > vertices[j].distance + temp->weight)
+                if (vertices[j].distance != INT_MAX &&
+                    vertices[temp->adjacentVertex].distance > vertices[j].distance + temp->weight)
                 {
                     changed = true;
 
@@ -515,4 +491,180 @@ void AdjacencyList::Shortpath_BF(int starting)
         }
         std::cout << std::endl;
     }
+}
+
+bool AdjacencyList::BFS(AdjacencyList &graph, int start, int end, int *parents)
+{
+    char color[V];
+    for (int i = 0; i < V; i++)
+    {
+        parents[i] = -1;
+        color[i] = 'W';
+    }
+
+    color[start] = 'G';
+    parents[start] = start;
+    Queue q;
+    q.enqueue(start);
+
+    int u;
+
+    while (!q.empty())
+    {
+        u = q.dequeue();
+        AdjacencyListNode* temp = list[u];
+        while (temp != nullptr)
+        {
+            if (color[temp->adjacentVertex] == 'W' && temp->weight > 0)
+            {
+                parents[temp->adjacentVertex] = u;
+                if (temp->adjacentVertex == end)
+                {
+                    return true;        //znaleziono drogę ze start do end, koniec
+                }
+                color[temp->adjacentVertex] = 'G';
+                q.enqueue(temp->adjacentVertex);
+            }
+
+            temp = temp->next;
+        }
+
+        color[u] = 'B';
+    }
+
+    return false;               //nie znaleziono drogi z start do end
+}
+
+bool AdjacencyList::DFS(AdjacencyList &graph, int start, int end, int *parents)
+{
+    char color[V];
+    for (int i = 0; i < V; i++)
+    {
+        color[i] = 'W';
+        parents[i] = -1;
+    }
+
+    //TODO
+}
+
+void AdjacencyList::DFSVisit(AdjacencyList &graph, int u, char *color, int *parents)
+{
+    //TODO
+}
+
+void AdjacencyList::Ford_Fulkerson(int start, int end, int pathfinding)
+{
+    AdjacencyList residualGraph = AdjacencyList(V);
+
+    for (int i = 0; i < V; i++)
+    {
+        AdjacencyListNode *temp = list[i];
+        AdjacencyListNode *resTemp = nullptr;
+
+        while (temp != nullptr)     //kopiowanie listy
+        {
+            AdjacencyListNode* node = new AdjacencyListNode();
+            if (residualGraph.list[i] == nullptr)
+            {
+                residualGraph.list[i] = node;
+                resTemp = node;
+            } else
+            {
+                resTemp->next = node;
+                resTemp = node;
+            }
+
+            resTemp->adjacentVertex = temp->adjacentVertex;
+            resTemp->weight = temp->weight;
+            resTemp->next = nullptr;
+
+            temp = temp->next;
+        }
+    }
+
+    int parent[V];
+
+    int maxFlow = 0;
+
+    bool pathExists;
+    if (pathfinding == 1)
+    {
+        pathExists = residualGraph.BFS(residualGraph, start, end, parent);
+    } else if (pathfinding == 2) {
+        pathExists = residualGraph.DFS(residualGraph, start, end, parent);
+    }
+
+    do
+    {
+        int pathFlow = INT_MAX;
+
+        for (int i = end; i != start; i = parent[i])        //przejście od końca do początku po ścieżce
+        {
+            int j = parent[i];
+            if (residualGraph.get(j, i) > 0 && pathFlow > residualGraph.get(j, i))              //szukamy połączenia o najmniejszym przepływie
+            {
+                pathFlow = residualGraph.get(j, i);
+            }
+        }
+
+        for (int i = end; i != start; i = parent[i])            //zmieniamy przepływ w grafie rezydualnym
+        {
+            int j = parent[i];
+
+            AdjacencyListNode* temp = residualGraph.list[j];
+            while (temp->adjacentVertex != i)
+            {
+                temp = temp->next;
+            }
+
+            temp->weight -= pathFlow;
+            if (temp->weight == 0)
+            {
+                residualGraph.removeEdge(j, i);
+            }
+
+            temp = residualGraph.list[i];
+            if (temp == nullptr)                        //zwiększenie wagi krawędzi i->j
+            {
+                AdjacencyListNode* node = new AdjacencyListNode();
+                residualGraph.list[i] = node;
+                node->adjacentVertex = j;
+                node->weight = pathFlow;
+                node->next = nullptr;
+            } else {
+                while (temp->next != nullptr && temp->adjacentVertex != j)
+                {
+                    temp = temp->next;
+                }
+
+                if (temp->adjacentVertex != j)
+                {
+                    AdjacencyListNode* node = new AdjacencyListNode();
+                    temp->next = node;
+                    node->adjacentVertex = j;
+                    node->weight = pathFlow;
+                    node->next = nullptr;
+                } else {
+                    temp->weight += pathFlow;
+                    if (temp->weight == 0)
+                    {
+                        residualGraph.removeEdge(i, j);
+                    }
+                }
+            }
+        }
+
+        maxFlow += pathFlow;
+
+        residualGraph.print();
+
+        if (pathfinding == 1)
+        {
+            pathExists = residualGraph.BFS(residualGraph, start, end, parent);
+        } else if (pathfinding == 2) {
+            pathExists = residualGraph.DFS(residualGraph, start, end, parent);
+        }
+    } while (pathExists);
+
+    std::cout << "Maksymalny przepływ: " << maxFlow << std::endl;
 }
