@@ -7,6 +7,10 @@ void mst_menu();
 void shortpath_menu();
 void maximum_flow_menu();
 
+void mst_tests();
+void shortpath_tests();
+void maximum_flow_tests();
+
 int main()
 {
     const std::string MENU_TEXT = "Wybierz problem do analizy:\n"
@@ -168,6 +172,10 @@ void mst_menu()
                 list->MST_Kruskal();
                 break;
             }
+            case 6:
+            {
+                mst_tests();
+            }
             default:
                 std::cout << "Nie rozpoznano opcji" << std::endl;
         }
@@ -290,6 +298,10 @@ void shortpath_menu()
                 list->Shortpath_BF(startingVertex);
                 break;
             }
+            case 6:
+            {
+                shortpath_tests();
+            }
             default:
                 std::cout << "Nie rozpoznano opcji" << std::endl;
         }
@@ -409,8 +421,12 @@ void maximum_flow_menu()
                     break;
                 }
                 matrix->Ford_Fulkerson(vertices[0], vertices[1], 2);
-                //list->Ford_Fulkerson(vertices[0], vertices[1], 2);
+                list->Ford_Fulkerson(vertices[0], vertices[1], 2);
                 break;
+            }
+            case 6:
+            {
+                maximum_flow_tests();
             }
             default:
                 std::cout << "Nie rozpoznano opcji" << std::endl;

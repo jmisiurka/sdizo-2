@@ -181,11 +181,18 @@ int AdjacencyList::get(int vertexA, int vertexB) const
 
 void AdjacencyList::removeEdge(int i, int j)
 {
-    AdjacencyListNode* temp = list[i];
+    AdjacencyListNode *temp = list[i];
 
     if (temp->next == nullptr)
     {
         list[i] = nullptr;
+        delete temp;
+        return;
+    }
+
+    if (temp->adjacentVertex == j)
+    {
+        list[i] = temp->next;
         delete temp;
         return;
     }
@@ -195,13 +202,13 @@ void AdjacencyList::removeEdge(int i, int j)
         temp = temp->next;
     }
 
+
     if (temp->next == nullptr)
     {
-        std::cout << "Krawędź nie istnieje" << std::endl;
         return;
     }
 
-    AdjacencyListNode* toBeDeleted = temp->next;
+    AdjacencyListNode *toBeDeleted = temp->next;
     temp->next = temp->next->next;
     delete toBeDeleted;
 }
@@ -493,7 +500,7 @@ void AdjacencyList::Shortpath_BF(int starting)
     }
 }
 
-bool AdjacencyList::BFS(AdjacencyList &graph, int start, int end, int *parents)
+bool AdjacencyList::BFS(int start, int end, int *parents)
 {
     char color[V];
     for (int i = 0; i < V; i++)
@@ -512,7 +519,7 @@ bool AdjacencyList::BFS(AdjacencyList &graph, int start, int end, int *parents)
     while (!q.empty())
     {
         u = q.dequeue();
-        AdjacencyListNode* temp = list[u];
+        AdjacencyListNode *temp = list[u];
         while (temp != nullptr)
         {
             if (color[temp->adjacentVertex] == 'W' && temp->weight > 0)
@@ -535,7 +542,7 @@ bool AdjacencyList::BFS(AdjacencyList &graph, int start, int end, int *parents)
     return false;               //nie znaleziono drogi z start do end
 }
 
-bool AdjacencyList::DFS(AdjacencyList &graph, int start, int end, int *parents)
+bool AdjacencyList::DFS(int start, int end, int *parents)
 {
     char color[V];
     for (int i = 0; i < V; i++)
@@ -544,12 +551,37 @@ bool AdjacencyList::DFS(AdjacencyList &graph, int start, int end, int *parents)
         parents[i] = -1;
     }
 
-    //TODO
+    return DFSVisit(start, end, color, parents);
 }
 
-void AdjacencyList::DFSVisit(AdjacencyList &graph, int u, char *color, int *parents)
+bool AdjacencyList::DFSVisit(int u, int end, char *color, int *parents)
 {
-    //TODO
+    color[u] = 'G';
+    bool foundEnd = false;
+
+    AdjacencyListNode *temp = list[u];
+
+    while (temp != nullptr)
+    {
+        if (foundEnd)
+        {
+            break;
+        }
+
+        if (color[temp->adjacentVertex] == 'W')
+        {
+            parents[temp->adjacentVertex] = u;
+            if (temp->adjacentVertex == end)
+            {
+                return true;
+            }
+            foundEnd = DFSVisit(temp->adjacentVertex, end, color, parents);
+        }
+
+        temp = temp->next;
+    }
+
+    return foundEnd;
 }
 
 void AdjacencyList::Ford_Fulkerson(int start, int end, int pathfinding)
@@ -563,7 +595,7 @@ void AdjacencyList::Ford_Fulkerson(int start, int end, int pathfinding)
 
         while (temp != nullptr)     //kopiowanie listy
         {
-            AdjacencyListNode* node = new AdjacencyListNode();
+            AdjacencyListNode *node = new AdjacencyListNode();
             if (residualGraph.list[i] == nullptr)
             {
                 residualGraph.list[i] = node;
@@ -589,10 +621,14 @@ void AdjacencyList::Ford_Fulkerson(int start, int end, int pathfinding)
     bool pathExists;
     if (pathfinding == 1)
     {
-        pathExists = residualGraph.BFS(residualGraph, start, end, parent);
-    } else if (pathfinding == 2) {
-        pathExists = residualGraph.DFS(residualGraph, start, end, parent);
+        pathExists = residualGraph.BFS(start, end, parent);
+    } else if (pathfinding == 2)
+    {
+        pathExists = residualGraph.DFS(start, end, parent);
     }
+
+    std::string outputText("Algorytm Forda-Fulkersona: lista sąsiedztwa"
+                           "Ścieżki przepływu:\n");
 
     do
     {
@@ -601,17 +637,21 @@ void AdjacencyList::Ford_Fulkerson(int start, int end, int pathfinding)
         for (int i = end; i != start; i = parent[i])        //przejście od końca do początku po ścieżce
         {
             int j = parent[i];
-            if (residualGraph.get(j, i) > 0 && pathFlow > residualGraph.get(j, i))              //szukamy połączenia o najmniejszym przepływie
+            outputText.append(std::to_string(i) + "<-");
+            if (residualGraph.get(j, i) > 0 &&
+                pathFlow > residualGraph.get(j, i))              //szukamy połączenia o najmniejszym przepływie
             {
                 pathFlow = residualGraph.get(j, i);
             }
         }
 
+        outputText.append(std::to_string(start) + ", przepływ: " + std::to_string(pathFlow) + "\n");
+
         for (int i = end; i != start; i = parent[i])            //zmieniamy przepływ w grafie rezydualnym
         {
             int j = parent[i];
 
-            AdjacencyListNode* temp = residualGraph.list[j];
+            AdjacencyListNode *temp = residualGraph.list[j];
             while (temp->adjacentVertex != i)
             {
                 temp = temp->next;
@@ -626,12 +666,13 @@ void AdjacencyList::Ford_Fulkerson(int start, int end, int pathfinding)
             temp = residualGraph.list[i];
             if (temp == nullptr)                        //zwiększenie wagi krawędzi i->j
             {
-                AdjacencyListNode* node = new AdjacencyListNode();
+                AdjacencyListNode *node = new AdjacencyListNode();
                 residualGraph.list[i] = node;
                 node->adjacentVertex = j;
                 node->weight = pathFlow;
                 node->next = nullptr;
-            } else {
+            } else
+            {
                 while (temp->next != nullptr && temp->adjacentVertex != j)
                 {
                     temp = temp->next;
@@ -639,12 +680,13 @@ void AdjacencyList::Ford_Fulkerson(int start, int end, int pathfinding)
 
                 if (temp->adjacentVertex != j)
                 {
-                    AdjacencyListNode* node = new AdjacencyListNode();
+                    AdjacencyListNode *node = new AdjacencyListNode();
                     temp->next = node;
                     node->adjacentVertex = j;
                     node->weight = pathFlow;
                     node->next = nullptr;
-                } else {
+                } else
+                {
                     temp->weight += pathFlow;
                     if (temp->weight == 0)
                     {
@@ -656,15 +698,16 @@ void AdjacencyList::Ford_Fulkerson(int start, int end, int pathfinding)
 
         maxFlow += pathFlow;
 
-        residualGraph.print();
-
         if (pathfinding == 1)
         {
-            pathExists = residualGraph.BFS(residualGraph, start, end, parent);
-        } else if (pathfinding == 2) {
-            pathExists = residualGraph.DFS(residualGraph, start, end, parent);
+            pathExists = residualGraph.BFS(start, end, parent);
+        } else if (pathfinding == 2)
+        {
+            pathExists = residualGraph.DFS(start, end, parent);
         }
     } while (pathExists);
+
+    std::cout << outputText;
 
     std::cout << "Maksymalny przepływ: " << maxFlow << std::endl;
 }

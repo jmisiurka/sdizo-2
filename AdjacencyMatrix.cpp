@@ -144,19 +144,6 @@ void AdjacencyMatrix::print() const
     std::cout << std::endl << std::endl;
 }
 
-int AdjacencyMatrix::countTotalWeight()
-{
-    int sum = 0;
-    for (int i = 0; i < V; i++)
-    {
-        for (int j = i; j < V; j++)
-        {
-            sum += matrix[i][j];
-        }
-    }
-    return sum;
-}
-
 void AdjacencyMatrix::MST_Prim(int starting)
 {
     KeyPrevPair vertices[V];                //tablica wszystkich wierzchołków
@@ -400,7 +387,7 @@ void AdjacencyMatrix::Shortpath_BF(int starting)
     }
 }
 
-bool AdjacencyMatrix::BFS(AdjacencyMatrix &graph, int start, int end, int *parents)
+bool AdjacencyMatrix::BFS(int start, int end, int *parents)
 {
     char color[V];
     for (int i = 0; i < V; i++)
@@ -421,7 +408,7 @@ bool AdjacencyMatrix::BFS(AdjacencyMatrix &graph, int start, int end, int *paren
         u = q.dequeue();
         for (int i = 0; i < V; i++)
         {
-            if (graph.matrix[u][i] > 0 && color[i] == 'W')
+            if (matrix[u][i] > 0 && color[i] == 'W')
             {
                 parents[i] = u;
                 if (i == end)
@@ -438,7 +425,7 @@ bool AdjacencyMatrix::BFS(AdjacencyMatrix &graph, int start, int end, int *paren
     return false;               //nie znaleziono drogi z start do end
 }
 
-bool AdjacencyMatrix::DFS(AdjacencyMatrix &graph, int start, int end, int *parents)
+bool AdjacencyMatrix::DFS(int start, int end, int *parents)
 {
     char color[V];
     for (int i = 0; i < V; i++)
@@ -447,12 +434,35 @@ bool AdjacencyMatrix::DFS(AdjacencyMatrix &graph, int start, int end, int *paren
         parents[i] = -1;
     }
 
-    //TODO
+    color[start] = 'G';
+
+    return DFSVisit(start, end, color, parents);
 }
 
-void AdjacencyMatrix::DFSVisit(AdjacencyMatrix &graph, int u, char *color, int *parents)
+bool AdjacencyMatrix::DFSVisit(int u, int end, char *color, int *parents)
 {
-    //TODO
+    color[u] = 'G';
+    bool foundEnd = false;
+
+    for (int v = 0; v < V; v++)
+    {
+        if (foundEnd)
+        {
+            break;
+        }
+
+        if (matrix[u][v] > 0 && color[v] == 'W')
+        {
+            parents[v] = u;
+            if (v == end)
+            {
+                return true;
+            }
+            foundEnd = DFSVisit(v, end, color, parents);
+        }
+    }
+
+    return foundEnd;
 }
 
 void AdjacencyMatrix::Ford_Fulkerson(int start, int end, int pathfinding)
@@ -474,10 +484,13 @@ void AdjacencyMatrix::Ford_Fulkerson(int start, int end, int pathfinding)
     bool pathExists;
     if (pathfinding == 1)
     {
-        pathExists = BFS(residualGraph, start, end, parent);
+        pathExists = residualGraph.BFS(start, end, parent);
     } else if (pathfinding == 2) {
-        pathExists = DFS(residualGraph, start, end, parent);
+        pathExists = residualGraph.DFS(start, end, parent);
     }
+
+    std::string outputText("Algorytm Forda-Fulkersona: macierz sąsiedztwa"
+                           "Ścieżki przepływu:\n");
 
     do
     {
@@ -485,12 +498,14 @@ void AdjacencyMatrix::Ford_Fulkerson(int start, int end, int pathfinding)
 
         for (int i = end; i != start; i = parent[i])        //przejście od końca do początku po ścieżce
         {
+            outputText.append(std::to_string(i) + "<-");
             int j = parent[i];
             if (pathFlow > residualGraph.matrix[j][i])              //szukamy połączenia o najmniejszym przepływie
             {
                 pathFlow = residualGraph.matrix[j][i];
             }
         }
+        outputText.append(std::to_string(start) + ", przepływ: " + std::to_string(pathFlow) + "\n");
 
         for (int i = end; i != start; i = parent[i])            //zmieniamy przepływ w grafie rezydualnym
         {
@@ -503,11 +518,13 @@ void AdjacencyMatrix::Ford_Fulkerson(int start, int end, int pathfinding)
 
         if (pathfinding == 1)
         {
-            pathExists = BFS(residualGraph, start, end, parent);
+            pathExists = residualGraph.BFS(start, end, parent);
         } else if (pathfinding == 2) {
-            pathExists = DFS(residualGraph, start, end, parent);
+            pathExists = residualGraph.DFS(start, end, parent);
         }
     } while (pathExists);
+
+    std::cout << outputText;
 
     std::cout << "Maksymalny przepływ: " << maxFlow << std::endl;
 }

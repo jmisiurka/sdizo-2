@@ -27,8 +27,6 @@ public:
 
     void print() const;
 
-    int countTotalWeight();
-
     void MST_Prim(int starting = 0);
 
     void MST_Kruskal();
@@ -39,11 +37,11 @@ public:
 
     void Shortpath_BF(int starting);
 
-    bool BFS(AdjacencyMatrix &graph, int start, int end, int* parents);
+    bool BFS(int start, int end, int* parents);
 
-    bool DFS(AdjacencyMatrix &graph, int start, int end, int* parents);
+    bool DFS(int start, int end, int* parents);
 
-    void DFSVisit(AdjacencyMatrix &graph, int u, char *color, int *parents);
+    bool DFSVisit(int u, int end, char *color, int *parents);
 
     void Ford_Fulkerson(int start, int end, int pathfinding);
 };

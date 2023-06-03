@@ -47,11 +47,11 @@ public:
 
     void Shortpath_BF(int starting);
 
-    bool BFS(AdjacencyList &graph, int start, int end, int *parents);
+    bool BFS(int start, int end, int *parents);
 
-    bool DFS(AdjacencyList &graph, int start, int end, int *parents);
+    bool DFS(int start, int end, int *parents);
 
-    void DFSVisit(AdjacencyList &graph, int u, char *color, int *parents);
+    bool DFSVisit(int u, int end, char *color, int *parents);
 
     void Ford_Fulkerson(int start, int end, int pathfinding);
 };
