@@ -114,10 +114,7 @@ Heap<T>::Heap(int size): currentSize(0)
 template<class T>
 Heap<T>::~Heap()
 {
-    if (table != nullptr)
-    {
-        delete[] table;
-    }
+    delete table;
 }
 
 template<class T>

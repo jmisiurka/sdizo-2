@@ -6,7 +6,6 @@
 #include <fstream>
 #include <iostream>
 #include "Heap.h"
-#include "AdjacencyList.h"
 #include "Queue.h"
 
 //Klasa reprezentująca macierz sąsiedztwa
@@ -21,21 +20,23 @@ public:
 
     void loadFromFile(const std::string& filename, int problem, int* additionalValues);
 
-    void loadFromAdjacencyList(const AdjacencyList& graph, int V);
+    void generateRandomGraph(int graphV, bool directed, int minWeight, int maxWeight, int densityLevel);
 
-    int& get(int vertexA, int vertexB) const;
+    int get(int vertexA, int vertexB) const;
+
+    int getV() const;
 
     void print() const;
 
-    void MST_Prim(int starting = 0);
+    void MST_Prim(int starting = 0, bool test = false);
 
-    void MST_Kruskal();
+    void MST_Kruskal(bool test = false);
 
     int Kruskal_parent(int vertex, int *parents);
 
-    void Shortpath_Dijkstra(int starting);
+    void shortpath_Dijkstra(int starting, bool test = false);
 
-    void Shortpath_BF(int starting);
+    void shortpath_BF(int starting, bool test = false);
 
     bool BFS(int start, int end, int* parents);
 
@@ -43,7 +44,7 @@ public:
 
     bool DFSVisit(int u, int end, char *color, int *parents);
 
-    void Ford_Fulkerson(int start, int end, int pathfinding);
+    void Ford_Fulkerson(int start, int end, int pathfinding, bool test = false);
 };
 
 #endif

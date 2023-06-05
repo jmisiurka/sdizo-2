@@ -1,4 +1,6 @@
 #include <climits>
+#include <random>
+#include <chrono>
 #include "AdjacencyMatrix.h"
 
 AdjacencyMatrix::AdjacencyMatrix(const int V) : V(V)
@@ -24,7 +26,7 @@ AdjacencyMatrix::~AdjacencyMatrix()
     delete[] matrix;
 }
 
-void AdjacencyMatrix::loadFromFile(const std::string &filename, int problem, int* additionalValues)
+void AdjacencyMatrix::loadFromFile(const std::string &filename, int problem, int *additionalValues)
 {
     std::ifstream filestream(filename);
 
@@ -82,7 +84,7 @@ void AdjacencyMatrix::loadFromFile(const std::string &filename, int problem, int
     filestream.close();
 }
 
-void AdjacencyMatrix::loadFromAdjacencyList(const AdjacencyList& graph, int graphV)
+void AdjacencyMatrix::generateRandomGraph(int graphV, bool directed, int minWeight, int maxWeight, int densityLevel)
 {
     for (int i = 0; i < V; i++)                     //usunięcie dotychczasowej macierzy
     {
@@ -91,7 +93,6 @@ void AdjacencyMatrix::loadFromAdjacencyList(const AdjacencyList& graph, int grap
     delete[] matrix;
 
     V = graphV;
-
     matrix = new int *[V];                           //alokacja 1 wymiaru tablicy
     for (int i = 0; i < V; i++)
     {
@@ -102,20 +103,193 @@ void AdjacencyMatrix::loadFromAdjacencyList(const AdjacencyList& graph, int grap
         }
     }
 
-    for (int i = 0; i < V; i++)
+    std::default_random_engine rng(
+            std::chrono::system_clock::now().time_since_epoch().count());    //generator liczb pseudolosowych
+    std::uniform_int_distribution<int> random_int;
+
+    if (!directed)
     {
-        AdjacencyListNode* temp = graph.getNode(i);
-        while (temp != nullptr)
+        int maxEdges = V * (V - 1) / 2;
+        if (densityLevel == 3)      //99%
         {
-            matrix[i][temp->adjacentVertex] = temp->weight;
-            temp = temp->next;
+            for (int i = 0; i < V; i++)     //wygenerowanie wszystkich możliwych krawędzi
+            {
+                for (int j = i + 1; j < V; j++)
+                {
+                    int weight = (random_int(rng) % (maxWeight + 1 - minWeight)) + minWeight;
+                    matrix[i][j] = weight;
+                    matrix[j][i] = weight;
+                }
+            }
+
+            int nOfEdges = 0.99f * maxEdges;
+            int removeCounter = maxEdges - nOfEdges;
+            while (removeCounter > 0)       //usunięcie 1% krawędzi
+            {
+                int vertexA = random_int(rng) % V;
+                int vertexB = random_int(rng) % V;
+                if (matrix[vertexA][vertexB] != 0)
+                {
+                    matrix[vertexA][vertexB] = 0;
+                    matrix[vertexB][vertexA] = 0;
+                    removeCounter--;
+                }
+            }
+        } else
+        {                    //20% lub 60%
+            int nOfEdges;
+            if (densityLevel == 1)
+            {
+                nOfEdges = 0.2f * maxEdges;
+            } else
+            {
+                nOfEdges = 0.6f * maxEdges;
+            }
+
+            int edgeCount = 0;
+
+            for (int i = 1; i < V; i++)         //prosty sposób generowania drzewa rozpinającego
+            {
+                bool created = false;
+                int weight = (random_int(rng) % (maxWeight + 1 - minWeight)) + minWeight;
+
+                while (!created)
+                {
+                    int adjacentVertex = random_int(rng) % i;
+                    if (matrix[i][adjacentVertex] == 0)
+                    {
+                        matrix[i][adjacentVertex] = weight;
+                        matrix[adjacentVertex][i] = weight;
+                        created = true;
+                        edgeCount++;
+                    }
+                }
+            }
+
+            while (edgeCount < nOfEdges)            //generowanie nowych krawędzi do określonej gęstości
+            {
+                int vertexA = random_int(rng) % V;
+                int vertexB = random_int(rng) % V;
+                int weight = (random_int(rng) % (maxWeight + 1 - minWeight)) + minWeight;
+                if (vertexA != vertexB && matrix[vertexA][vertexB] == 0)
+                {
+                    matrix[vertexA][vertexB] = weight;
+                    matrix[vertexB][vertexA] = weight;
+                    edgeCount++;
+                }
+            }
+        }
+    } else
+    {                //graf skierowany
+        int maxEdges = V * (V - 1);
+        if (densityLevel == 3)      //99%
+        {
+            for (int i = 0; i < V; i++)     //wygenerowanie wszystkich możliwych krawędzi
+            {
+                for (int j = 0; j < V; j++)
+                {
+                    int weight = (random_int(rng) % (maxWeight + 1 - minWeight)) + minWeight;
+                    matrix[i][j] = weight;
+                    weight = (random_int(rng) % (maxWeight + 1 - minWeight)) + minWeight;
+                    matrix[j][i] = weight;
+                }
+            }
+
+            int nOfEdges = 0.99f * maxEdges;
+            int removeCounter = maxEdges - nOfEdges;
+            while (removeCounter > 0)       //usunięcie 1% krawędzi
+            {
+                int vertexA = random_int(rng) % V;
+                int vertexB = random_int(rng) % V;
+                if (matrix[vertexA][vertexB] != 0)
+                {
+                    matrix[vertexA][vertexB] = 0;
+                    matrix[vertexB][vertexA] = 0;
+                    removeCounter--;
+                }
+            }
+        } else
+        {                    //20% lub 60%
+            int nOfEdges;
+            if (densityLevel == 1)
+            {
+                nOfEdges = 0.2f * maxEdges;
+            } else
+            {
+                nOfEdges = 0.6f * maxEdges;
+            }
+
+            int edgeCount = 0;
+
+            for (int i = 1; i < V; i++)         //prosty sposób generowania drzewa rozpinającego
+            {
+                bool created = false;
+                int weight = (random_int(rng) % (maxWeight + 1 - minWeight)) + minWeight;
+
+                while (!created)
+                {
+                    int adjacentVertex = random_int(rng) % i;
+                    if (matrix[i][adjacentVertex] == 0)
+                    {
+                        matrix[i][adjacentVertex] = weight;
+                        created = true;
+                        edgeCount++;
+                    }
+                }
+            }
+
+
+            while (edgeCount < nOfEdges)            //generowanie nowych krawędzi do określonej gęstości
+            {
+                int vertexA = random_int(rng) % V;
+                int vertexB = random_int(rng) % V;
+                int weight = (random_int(rng) % (maxWeight + 1 - minWeight)) + minWeight;
+                if (vertexA != vertexB && matrix[vertexA][vertexB] == 0)
+                {
+                    matrix[vertexA][vertexB] = weight;
+                    edgeCount++;
+                }
+            }
+
+            for (int i = 0; i < V; i++)    //weryfikacja czy do każdego wierzchołka można dotrzeć
+            {
+                bool canBeReached = false;
+                for (int j = 0; j < V; j++)
+                {
+                    if (matrix[j][i] != 0)
+                    {
+                        canBeReached = true;
+                        break;
+                    }
+                }
+
+                if (!canBeReached)
+                {
+                    bool created = false;
+                    while (!created)
+                    {
+                        int vertex = random_int(rng) % V;
+                        int weight = (random_int(rng) % (maxWeight + 1 - minWeight)) + minWeight;
+                        if (vertex != i)
+                        {
+                            matrix[vertex][i] = weight;     //utworzenie krawędzi do wierzchołka
+                            created = true;
+                        }
+                    }
+                }
+            }
         }
     }
 }
 
-int &AdjacencyMatrix::get(int vertexA, int vertexB) const
+int AdjacencyMatrix::get(int vertexA, int vertexB) const
 {
     return matrix[vertexA][vertexB];
+}
+
+int AdjacencyMatrix::getV() const
+{
+    return V;
 }
 
 void AdjacencyMatrix::print() const
@@ -144,7 +318,7 @@ void AdjacencyMatrix::print() const
     std::cout << std::endl << std::endl;
 }
 
-void AdjacencyMatrix::MST_Prim(int starting)
+void AdjacencyMatrix::MST_Prim(int starting, bool test)
 {
     KeyPrevPair vertices[V];                //tablica wszystkich wierzchołków
     bool considered[V];                     //tablica rozpatrzonych wierzchołków
@@ -182,28 +356,32 @@ void AdjacencyMatrix::MST_Prim(int starting)
         considered[u] = true;
     }
 
-    int sum = 0;
-
-    for (KeyPrevPair pair: vertices)
+    if (!test)
     {
-        int vertexA = pair.id;
-        int vertexB = pair.previous;
+        int sum = 0;
 
-
-        if (vertexB != -1)
+        for (KeyPrevPair pair: vertices)
         {
-            sum += matrix[vertexA][vertexB];
-            std::cout << "(" << vertexA << " - " << vertexB << ", " << matrix[vertexA][vertexB] << ")" << std::endl;
-        }
-    }
+            int vertexA = pair.id;
+            int vertexB = pair.previous;
 
-    std::cout << "Suma wag krawędzi:" << sum << std::endl << std::endl;
+
+            if (vertexB != -1)
+            {
+                sum += matrix[vertexA][vertexB];
+                std::cout << "(" << vertexA << " - " << vertexB << ", " << matrix[vertexA][vertexB] << ")" << std::endl;
+            }
+        }
+
+        std::cout << "Suma wag krawędzi:" << sum << std::endl << std::endl;
+    }
 }
 
-void AdjacencyMatrix::MST_Kruskal()
+void AdjacencyMatrix::MST_Kruskal(bool test)
 {
     Edge mstEdges[V - 1];                           //V - 1 krawędzi w MST
     Edge allEdges[V * (V - 1) / 2];                 //max krawędzi w grafie: V * (V - 1) / 2
+    int rank[V];
     Heap Q = Heap<Edge *>(
             V * (V - 1) / 2);      //kopiec operuje na wskaźnikach, więc tablica wyżej jest trochę sztuczna
 
@@ -232,6 +410,7 @@ void AdjacencyMatrix::MST_Kruskal()
 
     for (int i = 0; i < V; i++)                     //poddrzewa rozłączne dla każdego wierzchołka
     {
+        rank[i] = 0;
         parent[i] = i;
     }
 
@@ -248,17 +427,29 @@ void AdjacencyMatrix::MST_Kruskal()
         {
             mstEdges[mstCount] = edge;
             mstCount++;
-            parent[parent[edge.vertexB]] = parentA;
+            if (rank[parent[edge.vertexA]] > rank[parent[edge.vertexB]])
+            {
+                parent[parent[edge.vertexB]] = parentA;
+            } else {
+                parent[parent[edge.vertexA]] = parentB;
+                if (rank[parent[edge.vertexA]] == rank[parent[edge.vertexB]])
+                {
+                    rank[parent[edge.vertexB]]++;
+                }
+            }
         }
     }
 
-    int sum = 0;
-    for (Edge edge : mstEdges)
+    if (!test)
     {
-        sum += edge.weight;
-        std::cout << "(" << edge.vertexA << " - " << edge.vertexB << ", " << edge.weight << ")" << std::endl;
+        int sum = 0;
+        for (Edge edge: mstEdges)
+        {
+            sum += edge.weight;
+            std::cout << "(" << edge.vertexA << " - " << edge.vertexB << ", " << edge.weight << ")" << std::endl;
+        }
+        std::cout << "Suma wag krawędzi: " << sum << std::endl;
     }
-    std::cout << "Suma wag krawędzi: " << sum << std::endl;
 }
 
 int AdjacencyMatrix::Kruskal_parent(int vertex, int *parents)
@@ -270,7 +461,7 @@ int AdjacencyMatrix::Kruskal_parent(int vertex, int *parents)
     return parents[vertex];
 }
 
-void AdjacencyMatrix::Shortpath_Dijkstra(int starting)
+void AdjacencyMatrix::shortpath_Dijkstra(int starting, bool test)
 {
     DistPrevPair vertices[V];
     bool considered[V];
@@ -296,7 +487,8 @@ void AdjacencyMatrix::Shortpath_Dijkstra(int starting)
         {
             if (!considered[i] && matrix[u][i] != 0)
             {
-                if (matrix[u][i] + vertices[u].distance < vertices[i].distance)     //ścieżka przez u krótsza niż dotychczasowa
+                if (matrix[u][i] + vertices[u].distance <
+                    vertices[i].distance)     //ścieżka przez u krótsza niż dotychczasowa
                 {
                     vertices[i].distance = matrix[u][i] + vertices[u].distance;
                     vertices[i].previous = u;
@@ -307,24 +499,28 @@ void AdjacencyMatrix::Shortpath_Dijkstra(int starting)
         considered[u] = true;
     }
 
-    std::cout << "Dijkstra - macierz sąsiedztwa" << std::endl;
 
-    for (int i = 0; i < V; i++)
+    if (!test)
     {
-        std::cout << "Wierzchołek: " << i << std::endl;
-        std::cout << "\tOdległość od wierzchołka początkowego: " << vertices[i].distance << std::endl;
-        std::cout << "\tDroga: " << i;
-        int temp = vertices[i].previous;
-        while (temp >= 0)
+        std::cout << "Dijkstra - macierz sąsiedztwa" << std::endl;
+
+        for (int i = 0; i < V; i++)
         {
-            std::cout << "<-" << temp;
-            temp = vertices[temp].previous;
+            std::cout << "Wierzchołek: " << i << std::endl;
+            std::cout << "\tOdległość od wierzchołka początkowego: " << vertices[i].distance << std::endl;
+            std::cout << "\tDroga: " << i;
+            int temp = vertices[i].previous;
+            while (temp >= 0)
+            {
+                std::cout << "<-" << temp;
+                temp = vertices[temp].previous;
+            }
+            std::cout << std::endl;
         }
-        std::cout << std::endl;
     }
 }
 
-void AdjacencyMatrix::Shortpath_BF(int starting)
+void AdjacencyMatrix::shortpath_BF(int starting, bool test)
 {
     DistPrevPair vertices[V];
 
@@ -370,20 +566,23 @@ void AdjacencyMatrix::Shortpath_BF(int starting)
         }
     }
 
-    std::cout << "Bellman-Ford - macierz sąsiedztwa" << std::endl;
-
-    for (int i = 0; i < V; i++)
+    if (!test)
     {
-        std::cout << "Wierzchołek: " << i << std::endl;
-        std::cout << "\tOdległość od wierzchołka początkowego: " << vertices[i].distance << std::endl;
-        std::cout << "\tDroga: " << i;
-        int temp = vertices[i].previous;
-        while (temp >= 0)
+        std::cout << "Bellman-Ford - macierz sąsiedztwa" << std::endl;
+
+        for (int i = 0; i < V; i++)
         {
-            std::cout << "<-" << temp;
-            temp = vertices[temp].previous;
+            std::cout << "Wierzchołek: " << i << std::endl;
+            std::cout << "\tOdległość od wierzchołka początkowego: " << vertices[i].distance << std::endl;
+            std::cout << "\tDroga: " << i;
+            int temp = vertices[i].previous;
+            while (temp >= 0)
+            {
+                std::cout << "<-" << temp;
+                temp = vertices[temp].previous;
+            }
+            std::cout << std::endl;
         }
-        std::cout << std::endl;
     }
 }
 
@@ -465,7 +664,7 @@ bool AdjacencyMatrix::DFSVisit(int u, int end, char *color, int *parents)
     return foundEnd;
 }
 
-void AdjacencyMatrix::Ford_Fulkerson(int start, int end, int pathfinding)
+void AdjacencyMatrix::Ford_Fulkerson(int start, int end, int pathfinding, bool test)
 {
     AdjacencyMatrix residualGraph = AdjacencyMatrix(V);
 
@@ -485,12 +684,13 @@ void AdjacencyMatrix::Ford_Fulkerson(int start, int end, int pathfinding)
     if (pathfinding == 1)
     {
         pathExists = residualGraph.BFS(start, end, parent);
-    } else if (pathfinding == 2) {
+    } else if (pathfinding == 2)
+    {
         pathExists = residualGraph.DFS(start, end, parent);
     }
 
-    std::string outputText("Algorytm Forda-Fulkersona: macierz sąsiedztwa"
-                           "Ścieżki przepływu:\n");
+    std::string outputText("Algorytm Forda-Fulkersona: macierz sąsiedztwa\n"
+                               "Ścieżki przepływu:\n");
 
     do
     {
@@ -519,12 +719,16 @@ void AdjacencyMatrix::Ford_Fulkerson(int start, int end, int pathfinding)
         if (pathfinding == 1)
         {
             pathExists = residualGraph.BFS(start, end, parent);
-        } else if (pathfinding == 2) {
+        } else if (pathfinding == 2)
+        {
             pathExists = residualGraph.DFS(start, end, parent);
         }
     } while (pathExists);
 
-    std::cout << outputText;
+    if (!test)
+    {
+        std::cout << outputText;
 
-    std::cout << "Maksymalny przepływ: " << maxFlow << std::endl;
+        std::cout << "Maksymalny przepływ: " << maxFlow << std::endl;
+    }
 }

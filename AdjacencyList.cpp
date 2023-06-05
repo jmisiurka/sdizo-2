@@ -1,5 +1,4 @@
 #include <random>
-#include <chrono>
 #include "AdjacencyList.h"
 #include "Heap.h"
 
@@ -126,36 +125,45 @@ void AdjacencyList::loadFromFile(const std::string &filename, int problem, int *
     filestream.close();
 }
 
-void AdjacencyList::generateRandomGraph(int graphV, bool directed, int minWeight, int maxWeight, int density)
+void AdjacencyList::copyFromMatrix(AdjacencyMatrix &graph)
 {
     clearList();
 
-    V = graphV;
-    delete[] list;
+    V = graph.getV();
+
     list = new AdjacencyListNode *[V];
     for (int i = 0; i < V; i++)
     {
         list[i] = nullptr;
     }
 
-
-    std::default_random_engine rng(
-            std::chrono::system_clock::now().time_since_epoch().count());    //generator liczb pseudolosowych
-    std::uniform_int_distribution<int> random_int;
-
-    if (!directed)          //graf nieskierowany - robimy MST i dołączamy krawędzie
+    for (int i = 0; i < V; i++)
     {
-        for (int i = 1; i < V; i++)
+        for (int j = 0; j < V; j++)
         {
-            int adjacentVertex = random_int(rng) % i;   //losujemy przyłączony wierzchołek z zakresu [0; i-1]
-            int weight = (random_int(rng) % (maxWeight + 1 - minWeight)) + minWeight;
-            list[i]->adjacentVertex = adjacentVertex;
-            list[i]->weight = weight;
-            list[adjacentVertex]->adjacentVertex = i;
-            list[adjacentVertex]->weight = weight;
-        }
+            int weight = graph.get(i, j);
+            if (weight != 0)
+            {
+                AdjacencyListNode *newEntry = new AdjacencyListNode();
+                newEntry->weight = weight;
+                newEntry->adjacentVertex = j;
+                newEntry->next = nullptr;
 
-        //for (int i = V - 1; i < )
+                if (list[i] == nullptr)
+                {
+                    list[i] = newEntry;
+                } else
+                {
+                    AdjacencyListNode *temp = list[i];
+                    while (temp->next != nullptr)
+                    {
+                        temp = temp->next;
+                    }
+
+                    temp->next = newEntry;
+                }
+            }
+        }
     }
 }
 
@@ -248,7 +256,7 @@ void AdjacencyList::print() const
     }
 }
 
-void AdjacencyList::MST_Prim(int starting)
+void AdjacencyList::MST_Prim(int starting, bool test)
 {
     KeyPrevPair vertices[V];                //tablica wszystkich wierzchołków
     bool considered[V];                     //tablica rozpatrzonych wierzchołków
@@ -285,29 +293,32 @@ void AdjacencyList::MST_Prim(int starting)
         considered[u] = true;
     }
 
-    int sum = 0;
-
-    for (KeyPrevPair pair: vertices)
+    if (!test)
     {
-        int vertexA = pair.id;
-        int vertexB = pair.previous;
+        int sum = 0;
 
-
-        if (vertexB != -1)
+        for (KeyPrevPair pair: vertices)
         {
-            sum += get(vertexA, vertexB);
-            std::cout << "(" << vertexA << " - " << vertexB << ", " << get(vertexA, vertexB) << ")" << std::endl;
+            int vertexA = pair.id;
+            int vertexB = pair.previous;
+
+
+            if (vertexB != -1)
+            {
+                sum += get(vertexA, vertexB);
+                std::cout << "(" << vertexA << " - " << vertexB << ", " << get(vertexA, vertexB) << ")" << std::endl;
+            }
         }
+
+        std::cout << "Całkowita waga krawędzi: " << sum << std::endl;
     }
-
-
-    std::cout << "Całkowita waga krawędzi: " << sum << std::endl;
 }
 
-void AdjacencyList::MST_Kruskal()
+void AdjacencyList::MST_Kruskal(bool test)
 {
     Edge mstEdges[V - 1];                           //V - 1 krawędzi w MST
     Edge allEdges[V * (V - 1) / 2];                 //max krawędzi w grafie: V * (V - 1) / 2
+    int rank[V];
     Heap Q = Heap<Edge *>(
             V * (V - 1) / 2);      //kopiec operuje na wskaźnikach, więc tablica wyżej jest trochę sztuczna
 
@@ -338,6 +349,7 @@ void AdjacencyList::MST_Kruskal()
 
     for (int i = 0; i < V; i++)                     //poddrzewa rozłączne dla każdego wierzchołka
     {
+        rank[i] = 0;
         parent[i] = i;
     }
 
@@ -355,17 +367,30 @@ void AdjacencyList::MST_Kruskal()
         {
             mstEdges[mstCount] = edge;
             mstCount++;
-            parent[parent[edge.vertexB]] = parentA;
+            if (rank[parent[edge.vertexA]] > rank[parent[edge.vertexB]])
+            {
+                parent[parent[edge.vertexB]] = parentA;
+            } else
+            {
+                parent[parent[edge.vertexA]] = parentB;
+                if (rank[parent[edge.vertexA]] == rank[parent[edge.vertexB]])
+                {
+                    rank[parent[edge.vertexB]]++;
+                }
+            }
         }
     }
 
-    int sum = 0;
-    for (Edge edge: mstEdges)
+    if (!test)
     {
-        sum += edge.weight;
-        std::cout << "(" << edge.vertexA << " - " << edge.vertexB << ", " << edge.weight << ")" << std::endl;
+        int sum = 0;
+        for (Edge edge: mstEdges)
+        {
+            sum += edge.weight;
+            std::cout << "(" << edge.vertexA << " - " << edge.vertexB << ", " << edge.weight << ")" << std::endl;
+        }
+        std::cout << "Suma wag krawędzi: " << sum << std::endl;
     }
-    std::cout << "Suma wag krawędzi: " << sum << std::endl;
 }
 
 int AdjacencyList::Kruskal_parent(int vertex, int *parents)
@@ -377,7 +402,7 @@ int AdjacencyList::Kruskal_parent(int vertex, int *parents)
     return parents[vertex];
 }
 
-void AdjacencyList::Shortpath_Dijkstra(int starting)
+void AdjacencyList::shortpath_Dijkstra(int starting, bool test)
 {
     DistPrevPair vertices[V];
     bool considered[V];
@@ -415,24 +440,27 @@ void AdjacencyList::Shortpath_Dijkstra(int starting)
         considered[u] = true;
     }
 
-    std::cout << "Dijkstra - lista sąsiedztwa" << std::endl;
-
-    for (int i = 0; i < V; i++)
+    if (!test)
     {
-        std::cout << "Wierzchołek: " << i << std::endl;
-        std::cout << "\tOdległość od wierzchołka początkowego: " << vertices[i].distance << std::endl;
-        std::cout << "\tDroga: " << i;
-        int temp = vertices[i].previous;
-        while (temp >= 0)
+        std::cout << "Dijkstra - lista sąsiedztwa" << std::endl;
+
+        for (int i = 0; i < V; i++)
         {
-            std::cout << "<-" << temp;
-            temp = vertices[temp].previous;
+            std::cout << "Wierzchołek: " << i << std::endl;
+            std::cout << "\tOdległość od wierzchołka początkowego: " << vertices[i].distance << std::endl;
+            std::cout << "\tDroga: " << i;
+            int temp = vertices[i].previous;
+            while (temp >= 0)
+            {
+                std::cout << "<-" << temp;
+                temp = vertices[temp].previous;
+            }
+            std::cout << std::endl;
         }
-        std::cout << std::endl;
     }
 }
 
-void AdjacencyList::Shortpath_BF(int starting)
+void AdjacencyList::shortpath_BF(int starting, bool test)
 {
     DistPrevPair vertices[V];
 
@@ -468,35 +496,39 @@ void AdjacencyList::Shortpath_BF(int starting)
         }
     }
 
-    std::cout << "Bellman-Ford - lista sąsiedztwa" << std::endl;
 
-    for (int i = 0; i < V; i++)
+    if (!test)
     {
-        AdjacencyListNode *temp = list[i];
-        while (temp != nullptr)
+        std::cout << "Bellman-Ford - lista sąsiedztwa" << std::endl;
+
+        for (int i = 0; i < V; i++)
         {
-            if (vertices[temp->adjacentVertex].distance > vertices[i].distance + temp->weight)
+            AdjacencyListNode *temp = list[i];
+            while (temp != nullptr)
             {
-                std::cout << "W grafie wystąpił cykl o wadze ujemnej - wyniki są nieprawidłowe" << std::endl;
-                return;
+                if (vertices[temp->adjacentVertex].distance > vertices[i].distance + temp->weight)
+                {
+                    std::cout << "W grafie wystąpił cykl o wadze ujemnej - wyniki są nieprawidłowe" << std::endl;
+                    return;
+                }
+
+                temp = temp->next;
             }
-
-            temp = temp->next;
         }
-    }
 
-    for (int i = 0; i < V; i++)
-    {
-        std::cout << "Wierzchołek: " << i << std::endl;
-        std::cout << "\tOdległość od wierzchołka początkowego: " << vertices[i].distance << std::endl;
-        std::cout << "\tDroga: " << i;
-        int temp = vertices[i].previous;
-        while (temp >= 0)
+        for (int i = 0; i < V; i++)
         {
-            std::cout << "<-" << temp;
-            temp = vertices[temp].previous;
+            std::cout << "Wierzchołek: " << i << std::endl;
+            std::cout << "\tOdległość od wierzchołka początkowego: " << vertices[i].distance << std::endl;
+            std::cout << "\tDroga: " << i;
+            int temp = vertices[i].previous;
+            while (temp >= 0)
+            {
+                std::cout << "<-" << temp;
+                temp = vertices[temp].previous;
+            }
+            std::cout << std::endl;
         }
-        std::cout << std::endl;
     }
 }
 
@@ -584,7 +616,7 @@ bool AdjacencyList::DFSVisit(int u, int end, char *color, int *parents)
     return foundEnd;
 }
 
-void AdjacencyList::Ford_Fulkerson(int start, int end, int pathfinding)
+void AdjacencyList::Ford_Fulkerson(int start, int end, int pathfinding, bool test)
 {
     AdjacencyList residualGraph = AdjacencyList(V);
 
@@ -627,7 +659,7 @@ void AdjacencyList::Ford_Fulkerson(int start, int end, int pathfinding)
         pathExists = residualGraph.DFS(start, end, parent);
     }
 
-    std::string outputText("Algorytm Forda-Fulkersona: lista sąsiedztwa"
+    std::string outputText("Algorytm Forda-Fulkersona: lista sąsiedztwa\n"
                            "Ścieżki przepływu:\n");
 
     do
@@ -707,7 +739,10 @@ void AdjacencyList::Ford_Fulkerson(int start, int end, int pathfinding)
         }
     } while (pathExists);
 
-    std::cout << outputText;
+    if (!test)
+    {
+        std::cout << outputText;
 
-    std::cout << "Maksymalny przepływ: " << maxFlow << std::endl;
+        std::cout << "Maksymalny przepływ: " << maxFlow << std::endl;
+    }
 }
